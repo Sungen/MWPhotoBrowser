@@ -54,7 +54,7 @@
     UIImage *_previousNavigationBarBackgroundImageLandscapePhone;
     
     // Video
-    MPMoviePlayerViewController *_currentVideoPlayerViewController;
+    AVPlayerLayer *_currentPlayerLayer;
     NSUInteger _currentVideoIndex;
     UIActivityIndicatorView *_currentVideoLoadingIndicator;
     
