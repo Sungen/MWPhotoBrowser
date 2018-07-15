@@ -20,11 +20,10 @@
     return playerView;
 }
 
-- (instancetype)init {
-    self = [super init];
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
     if (self) {
         self.backgroundColor = [UIColor blackColor];
-        self.opaque = YES;
         self.userInteractionEnabled = NO;
         self.multipleTouchEnabled = NO;
         self.exclusiveTouch = NO;

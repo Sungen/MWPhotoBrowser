@@ -878,6 +878,8 @@
 	NSUInteger previousCurrentPage = _currentPageIndex;
 	_currentPageIndex = index;
 	if (_currentPageIndex != previousCurrentPage) {
+        // Stop Video
+        [self _pauseCurrentVideo];
         [self didStartViewingPageAtIndex:index];
     }
 	
@@ -1040,7 +1042,7 @@
     
 }
 
-- (void)_pauseCurrentView {
+- (void)_pauseCurrentVideo {
     [[NSNotificationCenter defaultCenter] removeObserver:self
                                                     name:AVPlayerItemDidPlayToEndTimeNotification
                                                   object:[_currentPlayerView playerItem]];
