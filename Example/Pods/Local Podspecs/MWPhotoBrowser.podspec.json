@@ -35,7 +35,8 @@
     "ImageIO",
     "QuartzCore",
     "AssetsLibrary",
-    "MediaPlayer"
+    "MediaPlayer",
+    "AVKit"
   ],
   "weak_frameworks": "Photos",
   "dependencies": {
@@ -44,6 +45,9 @@
     ],
     "DACircularProgress": [
       "~> 2.3"
+    ],
+    "Masonry": [
+      "~> 1.0.1"
     ],
     "SDWebImage": [
       "~> 3.7",

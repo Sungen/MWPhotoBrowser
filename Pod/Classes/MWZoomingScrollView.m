@@ -87,7 +87,6 @@
 - (void)prepareForReuse {
     [self hideImageFailure];
     self.photo = nil;
-    self.captionView = nil;
     self.selectedButton = nil;
     self.playButton = nil;
     _photoImageView.hidden = NO;
