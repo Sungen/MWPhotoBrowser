@@ -68,8 +68,6 @@
     _performingLayout = NO; // Reset on view did appear
     _rotating = NO;
     _viewIsActive = NO;
-    _enableSwipeToDismiss = YES;
-    _delayToHideElements = 5;
     _visiblePages = [[NSMutableSet alloc] init];
     _recycledPages = [[NSMutableSet alloc] init];
     _photos = [[NSMutableArray alloc] init];
@@ -150,20 +148,24 @@
     // ActionView
     _actionView = [[MCActionView alloc] initWithFrame:[self.view bounds]];
     _actionView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    __weak typeof(self) weakSelf = self;
+    _actionView.actionBlock = ^(MCActionType type) {
+        if ([weakSelf.delegate respondsToSelector:@selector(photoBrowser:didTapAction:)]) {
+            [weakSelf.delegate photoBrowser:weakSelf didTapAction:type];
+        }
+        if (type == MCActionTypePrev) {
+            [weakSelf gotoPreviousPage];
+        }else if (type == MCActionTypeNext) {
+            [weakSelf gotoNextPage];
+        }
+    };
+    [self.view addSubview:_actionView];
     
     // Update
     [self reloadData];
     
-    // Swipe to dismiss
-    if (_enableSwipeToDismiss) {
-        UISwipeGestureRecognizer *swipeGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(doneButtonPressed:)];
-        swipeGesture.direction = UISwipeGestureRecognizerDirectionDown | UISwipeGestureRecognizerDirectionUp;
-        [self.view addGestureRecognizer:swipeGesture];
-    }
-    
 	// Super
     [super viewDidLoad];
-	
 }
 
 - (void)performLayout {
@@ -206,15 +208,13 @@
     
     // ActionView visibility
     if (self.displayActionView) {
-        if (![_actionView superview]) {
-            [self.view addSubview:_actionView];
-        }
         if (numberOfPhotos > 1) {
             // 左右切换的按钮
             _actionView.prevButton.hidden = _actionView.nextButton.hidden = NO;
         }else {
             _actionView.prevButton.hidden = _actionView.nextButton.hidden = YES;
         }
+        [self.view bringSubviewToFront:_actionView];
     }
     
     // Update nav
@@ -497,6 +497,9 @@
 
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
 	_rotating = NO;
+    _actionView.frame = self.view.bounds;
+    [_actionView setNeedsLayout];
+    
     // Ensure nav bar isn't re-displayed
     if ([self areControlsHidden]) {
         self.navigationController.navigationBarHidden = NO;
@@ -1003,67 +1006,32 @@
     }
 }
 
+- (NSString *)convertTime:(CGFloat)time{
+    int hour = time / 3600;
+    int minute = (time - hour*3600)/60;
+    int second = (time - hour*3600 - minute*60);
+    if (hour) {
+        return [NSString stringWithFormat:@"%02d:%02d:%02d", hour, minute, second];
+    }else {
+        return [NSString stringWithFormat:@"%02d:%02d", minute, second];
+    }
+}
+
 - (void)_playVideo:(NSURL *)videoURL atPhotoIndex:(NSUInteger)index {
     
     _currentPlayerView = [MWPlayerView playerViewWithURL:videoURL frame:self.view.bounds];
     _currentPlayerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     [self.view addSubview:_currentPlayerView];
-    
-    
-    // Remove the movie player view controller from the "playback did finish" notification observers
-    // Observe ourselves so we can get it to use the crossfade transition
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:AVPlayerItemDidPlayToEndTimeNotification
-                                                  object:[_currentPlayerView playerItem]];
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:AVPlayerItemFailedToPlayToEndTimeNotification
-                                                  object:[_currentPlayerView playerItem]];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(videoFinishedCallback:)
-                                                 name:AVPlayerItemDidPlayToEndTimeNotification
-                                               object:[_currentPlayerView playerItem]];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(videoFailedCallback:)
-                                                 name:AVPlayerItemFailedToPlayToEndTimeNotification
-                                               object:[_currentPlayerView playerItem]];
-    
-    [_currentPlayerView.player play];
+    [_currentPlayerView play];
     
 }
 
 - (void)_pauseCurrentVideo {
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:AVPlayerItemDidPlayToEndTimeNotification
-                                                  object:[_currentPlayerView playerItem]];
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:AVPlayerItemFailedToPlayToEndTimeNotification
-                                                  object:[_currentPlayerView playerItem]];
-    [self clearCurrentVideo];
-}
-
-- (void)videoFailedCallback:(NSNotification*)notification {
-    // Remove observer
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:AVPlayerItemFailedToPlayToEndTimeNotification
-                                                  object:[_currentPlayerView playerItem]];
-    
-    // Clear up
-    [self clearCurrentVideo];
-}
-
-- (void)videoFinishedCallback:(NSNotification*)notification {
-    
-    // Remove observer
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:AVPlayerItemDidPlayToEndTimeNotification
-                                                  object:[_currentPlayerView playerItem]];
-    
-    // Clear up
+    [_currentPlayerView pause];
     [self clearCurrentVideo];
 }
 
 - (void)clearCurrentVideo {
-    [_currentPlayerView.player pause];
     [_currentPlayerView removeFromSuperview];
     _currentPlayerView = nil;
     [_currentVideoLoadingIndicator removeFromSuperview];
@@ -1092,6 +1060,10 @@
         CGRect frame = [self frameForPageAtIndex:_currentVideoIndex];
         _currentVideoLoadingIndicator.center = CGPointMake(CGRectGetMidX(frame), CGRectGetMidY(frame));
     }
+}
+
+- (void)playerViewDidFinishWithError:(NSError *)error {
+    [self clearCurrentVideo];
 }
 
 #pragma mark - Control Hiding / Showing
@@ -1148,9 +1120,9 @@
         [self.navigationController.navigationBar setAlpha:alpha];
         
         // Toolbar
-        _actionView.frame = [self.view bounds];
-        if (hidden) _actionView.frame = CGRectOffset(_actionView.frame, 0, animatonOffset);
-        _actionView.alpha = alpha;
+        self.actionView.frame = [self.view bounds];
+        if (hidden) self.actionView.frame = CGRectOffset(self.actionView.frame, 0, animatonOffset);
+        self.actionView.alpha = alpha;
 
     } completion:^(BOOL finished) {}];
     
@@ -1189,7 +1161,7 @@
 - (void)hideControlsAfterDelay {
 	if (![self areControlsHidden]) {
         [self cancelControlHiding];
-		_controlVisibilityTimer = [NSTimer scheduledTimerWithTimeInterval:self.delayToHideElements target:self selector:@selector(hideControls) userInfo:nil repeats:NO];
+		_controlVisibilityTimer = [NSTimer scheduledTimerWithTimeInterval:6 target:self selector:@selector(hideControls) userInfo:nil repeats:NO];
 	}
 }
 

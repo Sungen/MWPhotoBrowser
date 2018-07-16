@@ -8,11 +8,19 @@
 #import <UIKit/UIKit.h>
 #import <AVKit/AVKit.h>
 
+@protocol MWPlayerViewDelegate <NSObject>
+
+- (void)playerViewDidFinishWithError:(NSError *)error;
+
+@end
+
 @interface MWPlayerView : UIView
 
+@property(nonatomic, weak) id<MWPlayerViewDelegate> delegate;
+
 + (instancetype)playerViewWithURL:(NSURL *)url frame:(CGRect)frame;
-- (AVPlayerItem *)playerItem;
-- (AVPlayerLayer *)playerLayer;
-- (AVPlayer *)player;
+
+- (void)play;
+- (void)pause;
 
 @end

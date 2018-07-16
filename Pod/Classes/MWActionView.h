@@ -13,13 +13,12 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
     
     MCActionTypeDown,
     
-    MCActionTypePlay,
-    MCActionTypePause,
-    
     MCActionTypeClip,
     MCActionTypeShare,
     MCActionTypeMore,
 };
+
+#pragma mark -
 
 @interface MCActionView : UIView
 
@@ -28,9 +27,7 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
 
 @property(nonatomic, strong) UIButton *downButton;
 
-@property(nonatomic, strong) UIView *progressView;
-@property(nonatomic, strong) UIButton *playButton;
-@property(nonatomic, strong) UILabel *timeLable;
+@property(nonatomic, strong) UIView   *bottomView;
 
 @property(nonatomic, strong) UIButton *clipButton;
 @property(nonatomic, strong) UIButton *shareButton;
@@ -39,3 +36,5 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
 @property(nonatomic, copy) void(^actionBlock)(MCActionType type);
 
 @end
+
+

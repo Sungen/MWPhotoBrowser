@@ -34,16 +34,16 @@
 - (void)photoBrowser:(MWPhotoBrowser *)photoBrowser photoAtIndex:(NSUInteger)index selectedChanged:(BOOL)selected;
 - (void)photoBrowserDidFinishModalPresentation:(MWPhotoBrowser *)photoBrowser;
 
+- (void)photoBrowser:(MWPhotoBrowser *)photoBrowser didTapAction:(MCActionType)actionType;
+
 @end
 
 @interface MWPhotoBrowser : UIViewController <UIScrollViewDelegate, UIActionSheetDelegate>
 
 @property (nonatomic, weak) IBOutlet id<MWPhotoBrowserDelegate> delegate;
 @property (nonatomic) BOOL zoomPhotosToFill;
-@property (nonatomic) BOOL enableSwipeToDismiss;
 @property (nonatomic) BOOL autoPlayOnAppear;
 @property (nonatomic) BOOL displayActionView;
-@property (nonatomic) NSUInteger delayToHideElements;
 @property (nonatomic, readonly) NSUInteger currentIndex;
 
 // Customise image selection icons as they are the only icons with a colour tint

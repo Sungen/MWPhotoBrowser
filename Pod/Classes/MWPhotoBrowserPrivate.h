@@ -13,7 +13,7 @@
 #import "MWPlayerView.h"
 
 // Declare private methods of browser
-@interface MWPhotoBrowser () {
+@interface MWPhotoBrowser () <MWPlayerViewDelegate> {
     
 	// Data
     NSUInteger _photoCount;
@@ -35,9 +35,6 @@
 	NSTimer *_controlVisibilityTimer;
 	UIBarButtonItem *_doneButton, *_backButton;
     MBProgressHUD *_progressHUD;
-    
-    // Action View
-    MCActionView *_actionView;
     
     // Appearance
     BOOL _previousNavBarHidden;
@@ -72,7 +69,9 @@
 }
 
 // Properties
-@property (nonatomic) UIActivityViewController *activityViewController;
+@property (nonatomic, strong) UIActivityViewController *activityViewController;
+@property (nonatomic, strong) MWPlayerView *currentPlayerView;
+@property (nonatomic, strong) MCActionView *actionView;
 
 // Layout
 - (void)layoutVisiblePages;
