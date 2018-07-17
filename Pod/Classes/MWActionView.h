@@ -7,11 +7,14 @@
 
 #import <UIKit/UIKit.h>
 
+
 typedef NS_ENUM(NSUInteger, MCActionType) {
     MCActionTypePrev = 1,
     MCActionTypeNext,
     
-    MCActionTypeDown,
+    MCActionTypeMenu,
+    MCActionTypeDownToLocal,
+    MCActionTypeDelete,
     
     MCActionTypeClip,
     MCActionTypeShare,
@@ -29,7 +32,8 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
 @property(nonatomic, strong) UIButton *prevButton;
 @property(nonatomic, strong) UIButton *nextButton;
 
-@property(nonatomic, strong) UIButton *downButton;
+@property(nonatomic, strong) UIButton *menuButton;
+@property(nonatomic, strong) UIButton *menuView;
 
 @property(nonatomic, strong) UIView   *bottomView;
 
@@ -37,11 +41,27 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
 @property(nonatomic, strong) UIButton *shareButton;
 @property(nonatomic, strong) UIButton *moreButton;
 
-@property(nonatomic, weak) id delegate;
+@property(nonatomic, strong) UISlider *slider;
+@property(nonatomic, strong) UIButton *playButton;
+@property(nonatomic, strong) UILabel *timeLable;
+@property(nonatomic, strong) UITapGestureRecognizer *tap;
 
-- (void)setViewAlpha:(CGFloat)alpha;
-- (CGFloat)viewAlpha;
+@property(nonatomic, weak) id<MWActionViewDelegate> delegate;
+
+- (void)setupPlayerUIWithTarget:(id)target;
+- (void)showPlayerUI:(BOOL)flag;
 
 @end
+
+
+@interface MWShapeButton : UIButton
+
+@end
+
+
+@interface MWPlayerSlider : UISlider
+
+@end
+
 
 

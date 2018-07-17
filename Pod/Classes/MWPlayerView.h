@@ -15,7 +15,10 @@
 
 @end
 
-@interface MWPlayerView : MWActionView
+@interface MWPlayerView : UIView
+
+@property(nonatomic, strong) MWActionView *actionView;
+@property(nonatomic, weak) id<MWPlayerViewDelegate> delegate;
 
 - (void)setVideoURL:(NSURL *)url;
 - (void)play;

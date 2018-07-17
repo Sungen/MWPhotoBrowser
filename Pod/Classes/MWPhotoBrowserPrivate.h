@@ -33,7 +33,7 @@
 	
 	// Navigation & controls
 	NSTimer *_controlVisibilityTimer;
-	UIBarButtonItem *_doneButton, *_backButton;
+	UIBarButtonItem *_doneButton;
     MBProgressHUD *_progressHUD;
     
     // Appearance
@@ -56,7 +56,6 @@
     BOOL _hasBelongedToViewController;
     BOOL _isVCBasedStatusBarAppearance;
     BOOL _statusBarShouldBeHidden;
-    BOOL _displayActionButton;
     BOOL _leaveStatusBarAlone;
 	BOOL _performingLayout;
 	BOOL _rotating;
@@ -64,8 +63,6 @@
     BOOL _didSavePreviousStateOfNavBar;
     BOOL _skipNextPagingScrollViewPositioning;
     BOOL _viewHasAppearedInitially;
-    CGPoint _currentGridContentOffset;
-    
 }
 
 // Properties

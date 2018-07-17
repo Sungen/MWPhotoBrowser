@@ -72,7 +72,6 @@
     _recycledPages = [[NSMutableSet alloc] init];
     _photos = [[NSMutableArray alloc] init];
     _thumbPhotos = [[NSMutableArray alloc] init];
-    _currentGridContentOffset = CGPointMake(0, CGFLOAT_MAX);
     _didSavePreviousStateOfNavBar = NO;
     self.automaticallyAdjustsScrollViewInsets = NO;
     
@@ -136,7 +135,12 @@
 	// Setup paging scrolling view
 	CGRect pagingScrollViewFrame = [self frameForPagingScrollView];
 	_pagingScrollView = [[UIScrollView alloc] initWithFrame:pagingScrollViewFrame];
-	_pagingScrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    _pagingScrollView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                          UIViewAutoresizingFlexibleHeight |
+                                          UIViewAutoresizingFlexibleTopMargin |
+                                          UIViewAutoresizingFlexibleBottomMargin |
+                                          UIViewAutoresizingFlexibleLeftMargin |
+                                          UIViewAutoresizingFlexibleRightMargin);
 	_pagingScrollView.pagingEnabled = YES;
 	_pagingScrollView.delegate = self;
 	_pagingScrollView.showsHorizontalScrollIndicator = NO;
@@ -147,14 +151,25 @@
     
     // ActionView
     MWActionView *actionView = [[MWActionView alloc] initWithFrame:[self.view bounds]];
-    actionView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    actionView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                   UIViewAutoresizingFlexibleHeight |
+                                   UIViewAutoresizingFlexibleTopMargin |
+                                   UIViewAutoresizingFlexibleBottomMargin |
+                                   UIViewAutoresizingFlexibleLeftMargin |
+                                   UIViewAutoresizingFlexibleRightMargin);
     actionView.delegate = self;
     _actionView = actionView;
     
     // PlayerView
     MWPlayerView *playerView = [[MWPlayerView alloc] initWithFrame:[self.view bounds]];
-    playerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    playerView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                   UIViewAutoresizingFlexibleHeight |
+                                   UIViewAutoresizingFlexibleTopMargin |
+                                   UIViewAutoresizingFlexibleBottomMargin |
+                                   UIViewAutoresizingFlexibleLeftMargin |
+                                   UIViewAutoresizingFlexibleRightMargin);
     playerView.delegate = self;
+    playerView.actionView = _actionView;
     _playerView = playerView;
     
     // Update
@@ -185,7 +200,7 @@
         [_doneButton setBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsLandscapePhone];
         [_doneButton setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateNormal];
         [_doneButton setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateHighlighted];
-        self.navigationItem.rightBarButtonItem = _doneButton;
+        self.navigationItem.leftBarButtonItem = _doneButton;
     } else {
         // We're not first so show back button
         UIViewController *previousViewController = [self.navigationController.viewControllers objectAtIndex:self.navigationController.viewControllers.count-2];
@@ -207,10 +222,8 @@
         if (numberOfPhotos > 1) {
             // 左右切换的按钮
             _actionView.prevButton.hidden = _actionView.nextButton.hidden = NO;
-            _playerView.prevButton.hidden = _playerView.nextButton.hidden = NO;
         }else {
             _actionView.prevButton.hidden = _actionView.nextButton.hidden = YES;
-            _playerView.prevButton.hidden = _playerView.nextButton.hidden = YES;
         }
         if (!_actionView.superview) {
             [self.view addSubview:_actionView];
@@ -492,11 +505,6 @@
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
 	_rotating = NO;
     
-    _actionView.frame = self.view.bounds;
-    [_actionView setNeedsLayout];
-    _playerView.frame = self.view.bounds;
-    [_playerView setNeedsLayout];
-    
     // Ensure nav bar isn't re-displayed
     if ([self areControlsHidden]) {
         self.navigationController.navigationBarHidden = NO;
@@ -680,7 +688,6 @@
 	// Add missing pages
 	for (NSUInteger index = (NSUInteger)iFirstIndex; index <= (NSUInteger)iLastIndex; index++) {
 		if (![self isDisplayingPageForIndex:index]) {
-            
             // Add new page
 			MWZoomingScrollView *page = [self dequeueRecycledPage];
 			if (!page) {
@@ -705,7 +712,6 @@
             }
 		}
 	}
-	
 }
 
 - (BOOL)isDisplayingPageForIndex:(NSUInteger)index {
@@ -760,7 +766,7 @@
     
     // Handle video on page change
     if (!_rotating && index != _currentVideoIndex) {
-        [self _pauseCurrentVideo];
+        [self clearCurrentVideo];
     }
     
     // Release images further away than +/-1
@@ -874,7 +880,7 @@
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
 	// Hide controls when dragging begins
-	[self setControlsHidden:YES animated:YES permanent:NO];
+//    [self setControlsHidden:YES animated:YES permanent:NO];
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
@@ -891,8 +897,6 @@
     if (numberOfPhotos > 1) {
         if ([_delegate respondsToSelector:@selector(photoBrowser:titleForPhotoAtIndex:)]) {
             self.title = [_delegate photoBrowser:self titleForPhotoAtIndex:_currentPageIndex];
-        } else {
-            self.title = [NSString stringWithFormat:@"%lu %@ %lu", (unsigned long)(_currentPageIndex+1), NSLocalizedString(@"of", @"Used in the context: 'Showing 1 of 3 items'"), (unsigned long)numberOfPhotos];
         }
 	} else {
 		self.title = nil;
@@ -901,21 +905,15 @@
 	// Buttons
 	_actionView.prevButton.enabled = (_currentPageIndex > 0);
     _actionView.nextButton.enabled = (_currentPageIndex < numberOfPhotos - 1);
-    _playerView.prevButton.enabled = (_currentPageIndex > 0);
-    _playerView.nextButton.enabled = (_currentPageIndex < numberOfPhotos - 1);
     
     // Disable action button if there is no image or it's a video
     MWPhoto *photo = [self photoAtIndex:_currentPageIndex];
     if ([photo underlyingImage] == nil || ([photo respondsToSelector:@selector(isVideo)] && photo.isVideo)) {
         _actionView.shareButton.enabled = NO;
         _actionView.shareButton.tintColor = [UIColor clearColor]; // Tint to hide button
-        _playerView.shareButton.enabled = NO;
-        _playerView.shareButton.tintColor = [UIColor clearColor]; // Tint to hide button
     } else {
         _actionView.shareButton.enabled = YES;
         _actionView.shareButton.tintColor = nil;
-        _playerView.shareButton.enabled = NO;
-        _playerView.shareButton.tintColor = [UIColor clearColor]; // Tint to hide button
     }
 	
 }
@@ -1005,41 +1003,20 @@
     }
 }
 
-- (NSString *)convertTime:(CGFloat)time{
-    int hour = time / 3600;
-    int minute = (time - hour*3600)/60;
-    int second = (time - hour*3600 - minute*60);
-    if (hour) {
-        return [NSString stringWithFormat:@"%02d:%02d:%02d", hour, minute, second];
-    }else {
-        return [NSString stringWithFormat:@"%02d:%02d", minute, second];
-    }
-}
-
 - (void)_playVideo:(NSURL *)videoURL atPhotoIndex:(NSUInteger)index {
-
     [_playerView setVideoURL:videoURL];
     
-    MWZoomingScrollView *page = [self pageDisplayedAtIndex:index];
-    [_actionView removeFromSuperview];
-    if (!_playerView.superview) {
-        [page addSubview:_playerView];
-    }
+    _playerView.frame = [self frameForPageAtIndex:index];
+    [_actionView showPlayerUI:YES];
+    [_pagingScrollView addSubview:_playerView];
     
     [_playerView play];
-    
-}
-
-- (void)_pauseCurrentVideo {
-    [_playerView pause];
-    [self clearCurrentVideo];
 }
 
 - (void)clearCurrentVideo {
+    [_actionView showPlayerUI:NO];
+    [_playerView pause];
     [_playerView removeFromSuperview];
-    if (!_actionView.superview) {
-        [self.view addSubview:_actionView];
-    }
     [[self pageDisplayedAtIndex:_currentVideoIndex] playButton].hidden = NO;
     _currentVideoIndex = NSUIntegerMax;
 }
@@ -1116,8 +1093,7 @@
         [strongSelf.navigationController.navigationBar setAlpha:alpha];
         
         // Tool
-        [strongSelf->_actionView setViewAlpha:alpha];
-        [strongSelf->_playerView setViewAlpha:alpha];
+        [strongSelf->_actionView setAlpha:alpha];
 
     } completion:^(BOOL finished) {}];
     
@@ -1160,7 +1136,7 @@
 	}
 }
 
-- (BOOL)areControlsHidden { return ([_actionView viewAlpha] == 0 || [_playerView viewAlpha] == 0); }
+- (BOOL)areControlsHidden { return ([_actionView alpha] == 0);}
 - (void)hideControls { [self setControlsHidden:YES animated:YES permanent:NO]; }
 - (void)showControls { [self setControlsHidden:NO animated:YES permanent:NO]; }
 - (void)toggleControls { [self setControlsHidden:![self areControlsHidden] animated:YES permanent:NO]; }
