@@ -7,6 +7,7 @@
 
 #import <UIKit/UIKit.h>
 #import <AVKit/AVKit.h>
+#import "MWActionView.h"
 
 @protocol MWPlayerViewDelegate <NSObject>
 
@@ -14,12 +15,9 @@
 
 @end
 
-@interface MWPlayerView : UIView
+@interface MWPlayerView : MWActionView
 
-@property(nonatomic, weak) id<MWPlayerViewDelegate> delegate;
-
-+ (instancetype)playerViewWithURL:(NSURL *)url frame:(CGRect)frame;
-
+- (void)setVideoURL:(NSURL *)url;
 - (void)play;
 - (void)pause;
 

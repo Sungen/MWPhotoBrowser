@@ -8,7 +8,7 @@
 #import "MWActionView.h"
 #import "UIImage+MWPhotoBrowser.h"
 
-@implementation MCActionView
+@implementation MWActionView
 
 // 透明背景 空白区域 不接受对自己的点击
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event
@@ -23,7 +23,7 @@
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [UIColor colorWithRed:1.0 green:0 blue:0 alpha:0.4];
+        self.backgroundColor = [UIColor clearColor];
         [self setupView];
     }
     return self;
@@ -111,9 +111,19 @@
 }
 
 - (void)tapAction:(UIButton *)button {
-    if (self.actionBlock) {
-        self.actionBlock(button.tag);
+    if ([self.delegate respondsToSelector:@selector(actionViewDidTapAction:)]) {
+        [self.delegate actionViewDidTapAction:button.tag];
     }
+}
+
+#pragma mark -
+
+- (void)setViewAlpha:(CGFloat)alpha {
+    self.alpha = alpha;
+}
+
+- (CGFloat)viewAlpha {
+    return self.alpha;
 }
 
 @end

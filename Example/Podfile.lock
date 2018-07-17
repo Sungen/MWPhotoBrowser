@@ -11,7 +11,7 @@ PODS:
     - DACircularProgress (~> 2.3)
     - Masonry (~> 1.0.1)
     - MBProgressHUD (~> 0.9)
-    - SDWebImage (!= 3.7.2, ~> 3.7)
+    - SDWebImage
   - SDWebImage (3.7.5):
     - SDWebImage/Core (= 3.7.5)
   - SDWebImage/Core (3.7.5)
@@ -35,7 +35,7 @@ SPEC CHECKSUMS:
   FBSnapshotTestCase: 3dc3899168747a0319c5278f5b3445c13a6532dd
   Masonry: 7c429b56da9d4ee0bbb3ed77a5ea710d6a5df39e
   MBProgressHUD: 1569cf7ace17a8bac47aabfbb8580a49690386d1
-  MWPhotoBrowser: 58f114caf7c9e841800bc90e9089d008682d26a6
+  MWPhotoBrowser: aa18d06b4a6e7f20fcae58cdbe6a5b09022caafb
   SDWebImage: 69c6303e3348fba97e03f65d65d4fbc26740f461
   Specta: 9cec98310dca411f7c7ffd6943552b501622abfe
 

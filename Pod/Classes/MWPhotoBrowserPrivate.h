@@ -13,7 +13,7 @@
 #import "MWPlayerView.h"
 
 // Declare private methods of browser
-@interface MWPhotoBrowser () <MWPlayerViewDelegate> {
+@interface MWPhotoBrowser () <MWPlayerViewDelegate, MWActionViewDelegate> {
     
 	// Data
     NSUInteger _photoCount;
@@ -48,9 +48,9 @@
     UIImage *_previousNavigationBarBackgroundImageLandscapePhone;
     
     // Video
-    MWPlayerView *_currentPlayerView;
     NSUInteger _currentVideoIndex;
-    UIActivityIndicatorView *_currentVideoLoadingIndicator;
+    MWActionView *_actionView;
+    MWPlayerView *_playerView;
     
     // Misc
     BOOL _hasBelongedToViewController;
@@ -70,8 +70,6 @@
 
 // Properties
 @property (nonatomic, strong) UIActivityViewController *activityViewController;
-@property (nonatomic, strong) MWPlayerView *currentPlayerView;
-@property (nonatomic, strong) MCActionView *actionView;
 
 // Layout
 - (void)layoutVisiblePages;

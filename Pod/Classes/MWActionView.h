@@ -18,9 +18,13 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
     MCActionTypeMore,
 };
 
+@protocol MWActionViewDelegate <NSObject>
+- (void)actionViewDidTapAction:(MCActionType)type;
+@end
+
 #pragma mark -
 
-@interface MCActionView : UIView
+@interface MWActionView : UIView
 
 @property(nonatomic, strong) UIButton *prevButton;
 @property(nonatomic, strong) UIButton *nextButton;
@@ -33,7 +37,10 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
 @property(nonatomic, strong) UIButton *shareButton;
 @property(nonatomic, strong) UIButton *moreButton;
 
-@property(nonatomic, copy) void(^actionBlock)(MCActionType type);
+@property(nonatomic, weak) id delegate;
+
+- (void)setViewAlpha:(CGFloat)alpha;
+- (CGFloat)viewAlpha;
 
 @end
 

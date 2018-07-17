@@ -146,20 +146,16 @@
 	[self.view addSubview:_pagingScrollView];
     
     // ActionView
-    _actionView = [[MCActionView alloc] initWithFrame:[self.view bounds]];
-    _actionView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    __weak typeof(self) weakSelf = self;
-    _actionView.actionBlock = ^(MCActionType type) {
-        if ([weakSelf.delegate respondsToSelector:@selector(photoBrowser:didTapAction:)]) {
-            [weakSelf.delegate photoBrowser:weakSelf didTapAction:type];
-        }
-        if (type == MCActionTypePrev) {
-            [weakSelf gotoPreviousPage];
-        }else if (type == MCActionTypeNext) {
-            [weakSelf gotoNextPage];
-        }
-    };
-    [self.view addSubview:_actionView];
+    MWActionView *actionView = [[MWActionView alloc] initWithFrame:[self.view bounds]];
+    actionView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    actionView.delegate = self;
+    _actionView = actionView;
+    
+    // PlayerView
+    MWPlayerView *playerView = [[MWPlayerView alloc] initWithFrame:[self.view bounds]];
+    playerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    playerView.delegate = self;
+    _playerView = playerView;
     
     // Update
     [self reloadData];
@@ -211,10 +207,14 @@
         if (numberOfPhotos > 1) {
             // 左右切换的按钮
             _actionView.prevButton.hidden = _actionView.nextButton.hidden = NO;
+            _playerView.prevButton.hidden = _playerView.nextButton.hidden = NO;
         }else {
             _actionView.prevButton.hidden = _actionView.nextButton.hidden = YES;
+            _playerView.prevButton.hidden = _playerView.nextButton.hidden = YES;
         }
-        [self.view bringSubviewToFront:_actionView];
+        if (!_actionView.superview) {
+            [self.view addSubview:_actionView];
+        }
     }
     
     // Update nav
@@ -410,9 +410,6 @@
 	// Flag
 	_performingLayout = YES;
     
-    // ActionView
-    _actionView.frame = [self.view bounds];
-    
 	// Remember index
 	NSUInteger indexPriorToLayout = _currentPageIndex;
 	
@@ -444,9 +441,6 @@
         }
 
 	}
-    
-    // Adjust video loading indicator if it's visible
-    [self positionVideoLoadingIndicator];
 	
 	// Adjust contentOffset to preserve page location based on values collected prior to location
 	_pagingScrollView.contentOffset = [self contentOffsetForPageAtIndex:indexPriorToLayout];
@@ -497,8 +491,11 @@
 
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
 	_rotating = NO;
+    
     _actionView.frame = self.view.bounds;
     [_actionView setNeedsLayout];
+    _playerView.frame = self.view.bounds;
+    [_playerView setNeedsLayout];
     
     // Ensure nav bar isn't re-displayed
     if ([self areControlsHidden]) {
@@ -763,7 +760,7 @@
     
     // Handle video on page change
     if (!_rotating && index != _currentVideoIndex) {
-        [self clearCurrentVideo];
+        [self _pauseCurrentVideo];
     }
     
     // Release images further away than +/-1
@@ -870,8 +867,6 @@
 	NSUInteger previousCurrentPage = _currentPageIndex;
 	_currentPageIndex = index;
 	if (_currentPageIndex != previousCurrentPage) {
-        // Stop Video
-        [self _pauseCurrentVideo];
         [self didStartViewingPageAtIndex:index];
     }
 	
@@ -905,16 +900,22 @@
 	
 	// Buttons
 	_actionView.prevButton.enabled = (_currentPageIndex > 0);
-	_actionView.nextButton.enabled = (_currentPageIndex < numberOfPhotos - 1);
+    _actionView.nextButton.enabled = (_currentPageIndex < numberOfPhotos - 1);
+    _playerView.prevButton.enabled = (_currentPageIndex > 0);
+    _playerView.nextButton.enabled = (_currentPageIndex < numberOfPhotos - 1);
     
     // Disable action button if there is no image or it's a video
     MWPhoto *photo = [self photoAtIndex:_currentPageIndex];
     if ([photo underlyingImage] == nil || ([photo respondsToSelector:@selector(isVideo)] && photo.isVideo)) {
         _actionView.shareButton.enabled = NO;
         _actionView.shareButton.tintColor = [UIColor clearColor]; // Tint to hide button
+        _playerView.shareButton.enabled = NO;
+        _playerView.shareButton.tintColor = [UIColor clearColor]; // Tint to hide button
     } else {
         _actionView.shareButton.enabled = YES;
         _actionView.shareButton.tintColor = nil;
+        _playerView.shareButton.enabled = NO;
+        _playerView.shareButton.tintColor = [UIColor clearColor]; // Tint to hide button
     }
 	
 }
@@ -957,9 +958,7 @@
     }
     NSUInteger index = [self indexForPlayButton:sender];
     if (index != NSUIntegerMax) {
-        if (!_currentPlayerView) {
-            [self playVideoAtIndex:index];
-        }
+        [self playVideoAtIndex:index];
     }
 }
 
@@ -983,7 +982,7 @@
         // Valid for playing
         [self clearCurrentVideo];
         _currentVideoIndex = index;
-        [self setVideoLoadingIndicatorVisible:YES atPageIndex:index];
+        [self setVideoPlayButtonVisible:NO atPageIndex:index];
 
         // Get video and play
         typeof(self) __weak weakSelf = self;
@@ -996,9 +995,9 @@
                     return;
                 }
                 if (url) {
-                    [weakSelf _playVideo:url atPhotoIndex:index];
+                    [strongSelf _playVideo:url atPhotoIndex:index];
                 } else {
-                    [weakSelf setVideoLoadingIndicatorVisible:NO atPageIndex:index];
+                    [strongSelf setVideoPlayButtonVisible:YES atPageIndex:index];
                 }
             });
         }];
@@ -1018,47 +1017,51 @@
 }
 
 - (void)_playVideo:(NSURL *)videoURL atPhotoIndex:(NSUInteger)index {
+
+    [_playerView setVideoURL:videoURL];
     
-    _currentPlayerView = [MWPlayerView playerViewWithURL:videoURL frame:self.view.bounds];
-    _currentPlayerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.view addSubview:_currentPlayerView];
-    [_currentPlayerView play];
+    MWZoomingScrollView *page = [self pageDisplayedAtIndex:index];
+    [_actionView removeFromSuperview];
+    if (!_playerView.superview) {
+        [page addSubview:_playerView];
+    }
+    
+    [_playerView play];
     
 }
 
 - (void)_pauseCurrentVideo {
-    [_currentPlayerView pause];
+    [_playerView pause];
     [self clearCurrentVideo];
 }
 
 - (void)clearCurrentVideo {
-    [_currentPlayerView removeFromSuperview];
-    _currentPlayerView = nil;
-    [_currentVideoLoadingIndicator removeFromSuperview];
-    _currentVideoLoadingIndicator = nil;
+    [_playerView removeFromSuperview];
+    if (!_actionView.superview) {
+        [self.view addSubview:_actionView];
+    }
     [[self pageDisplayedAtIndex:_currentVideoIndex] playButton].hidden = NO;
     _currentVideoIndex = NSUIntegerMax;
 }
 
-- (void)setVideoLoadingIndicatorVisible:(BOOL)visible atPageIndex:(NSUInteger)pageIndex {
-    if (_currentVideoLoadingIndicator && !visible) {
-        [_currentVideoLoadingIndicator removeFromSuperview];
-        _currentVideoLoadingIndicator = nil;
+- (void)setVideoPlayButtonVisible:(BOOL)visible atPageIndex:(NSUInteger)pageIndex {
+    if (visible) {
         [[self pageDisplayedAtIndex:pageIndex] playButton].hidden = NO;
-    } else if (!_currentVideoLoadingIndicator && visible) {
-        _currentVideoLoadingIndicator = [[UIActivityIndicatorView alloc] initWithFrame:CGRectZero];
-        [_currentVideoLoadingIndicator sizeToFit];
-        [_currentVideoLoadingIndicator startAnimating];
-        [_pagingScrollView addSubview:_currentVideoLoadingIndicator];
-        [self positionVideoLoadingIndicator];
+    }else {
         [[self pageDisplayedAtIndex:pageIndex] playButton].hidden = YES;
     }
 }
 
-- (void)positionVideoLoadingIndicator {
-    if (_currentVideoLoadingIndicator && _currentVideoIndex != NSUIntegerMax) {
-        CGRect frame = [self frameForPageAtIndex:_currentVideoIndex];
-        _currentVideoLoadingIndicator.center = CGPointMake(CGRectGetMidX(frame), CGRectGetMidY(frame));
+#pragma mark - Delegates
+
+- (void)actionViewDidTapAction:(MCActionType)type {
+    if (type == MCActionTypePrev) {
+        [self gotoPreviousPage];
+    }else if (type == MCActionTypeNext) {
+        [self gotoNextPage];
+    }
+    if ([self.delegate respondsToSelector:@selector(photoBrowser:didTapAction:)]) {
+        [self.delegate photoBrowser:self didTapAction:type];
     }
 }
 
@@ -1080,7 +1083,6 @@
     [self cancelControlHiding];
     
     // Animations & positions
-    CGFloat animatonOffset = 20;
     CGFloat animationDuration = (animated ? 0.35 : 0);
     
     // Status bar
@@ -1104,25 +1106,18 @@
 
     }
     
-    // Toolbar, nav bar and captions
-    // Pre-appear animation positions for sliding
-    if ([self areControlsHidden] && !hidden && animated) {
-        
-        // Toolbar
-        _actionView.frame = [self.view bounds];
-    }
-    
+    __weak typeof(self) weakSelf = self;
     [UIView animateWithDuration:animationDuration animations:^(void) {
         
+        typeof(self) strongSelf = weakSelf;
         CGFloat alpha = hidden ? 0 : 1;
 
         // Nav bar slides up on it's own on iOS 7+
-        [self.navigationController.navigationBar setAlpha:alpha];
+        [strongSelf.navigationController.navigationBar setAlpha:alpha];
         
-        // Toolbar
-        self.actionView.frame = [self.view bounds];
-        if (hidden) self.actionView.frame = CGRectOffset(self.actionView.frame, 0, animatonOffset);
-        self.actionView.alpha = alpha;
+        // Tool
+        [strongSelf->_actionView setViewAlpha:alpha];
+        [strongSelf->_playerView setViewAlpha:alpha];
 
     } completion:^(BOOL finished) {}];
     
@@ -1165,7 +1160,7 @@
 	}
 }
 
-- (BOOL)areControlsHidden { return (_actionView.alpha == 0); }
+- (BOOL)areControlsHidden { return ([_actionView viewAlpha] == 0 || [_playerView viewAlpha] == 0); }
 - (void)hideControls { [self setControlsHidden:YES animated:YES permanent:NO]; }
 - (void)showControls { [self setControlsHidden:NO animated:YES permanent:NO]; }
 - (void)toggleControls { [self setControlsHidden:![self areControlsHidden] animated:YES permanent:NO]; }
