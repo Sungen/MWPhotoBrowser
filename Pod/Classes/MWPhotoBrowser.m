@@ -13,6 +13,7 @@
 #import "MWPhotoBrowserPrivate.h"
 #import "SDImageCache.h"
 #import "UIImage+MWPhotoBrowser.h"
+#import "MBProgressHUD+dark.h"
 
 #define PADDING                  10
 
@@ -1036,6 +1037,8 @@
         [self gotoPreviousPage];
     }else if (type == MCActionTypeNext) {
         [self gotoNextPage];
+    }else if (type == MCActionTypeShare) {
+        [self actionButtonPressed:nil];
     }
     if ([self.delegate respondsToSelector:@selector(photoBrowser:didTapAction:)]) {
         [self.delegate photoBrowser:self didTapAction:type];
@@ -1190,9 +1193,15 @@
             self.activityViewController = [[UIActivityViewController alloc] initWithActivityItems:items applicationActivities:nil];
             
             // Show loading spinner after a couple of seconds
-            double delayInSeconds = 2.0;
-            dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-            dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+//            double delayInSeconds = 2.0;
+//            dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+//            dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+//                if (self.activityViewController) {
+//                    [self showProgressHUDWithMessage:nil];
+//                }
+//            });
+        
+            dispatch_async(dispatch_get_main_queue(), ^{
                 if (self.activityViewController) {
                     [self showProgressHUDWithMessage:nil];
                 }
@@ -1200,18 +1209,19 @@
 
             // Show
             typeof(self) __weak weakSelf = self;
-            [self.activityViewController setCompletionHandler:^(NSString *activityType, BOOL completed) {
+            [self.activityViewController setCompletionWithItemsHandler:^(UIActivityType  _Nullable activityType, BOOL completed, NSArray * _Nullable returnedItems, NSError * _Nullable activityError) {
                 weakSelf.activityViewController = nil;
                 [weakSelf hideControlsAfterDelay];
                 [weakSelf hideProgressHUD:YES];
             }];
-            // iOS 8 - Set the Anchor Point for the popover
-            if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8")) {
-                UIBarButtonItem *barItem = [[UIBarButtonItem alloc] initWithCustomView:_actionView.shareButton];
-                self.activityViewController.popoverPresentationController.barButtonItem = barItem;
-            }
+        
+            // iOS 8 - Set the Anchor Point for the popover, ipad
+//            if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8")) {
+//                UIBarButtonItem *barItem = [[UIBarButtonItem alloc] initWithCustomView:_actionView.shareButton];
+//                self.activityViewController.popoverPresentationController.barButtonItem = barItem;
+//            }
+        
             [self presentViewController:self.activityViewController animated:YES completion:nil];
-
         
         // Keep controls hidden
         [self setControlsHidden:NO animated:YES permanent:YES];
@@ -1222,37 +1232,13 @@
 
 #pragma mark - Action Progress
 
-- (MBProgressHUD *)progressHUD {
-    if (!_progressHUD) {
-        _progressHUD = [[MBProgressHUD alloc] initWithView:self.view];
-        _progressHUD.minSize = CGSizeMake(120, 120);
-        _progressHUD.minShowTime = 1;
-        [self.view addSubview:_progressHUD];
-    }
-    return _progressHUD;
-}
-
 - (void)showProgressHUDWithMessage:(NSString *)message {
-    self.progressHUD.labelText = message;
-    self.progressHUD.mode = MBProgressHUDModeIndeterminate;
-    [self.progressHUD show:YES];
+    _progressHUD = [MBProgressHUD showDarkIndeterminateHudAddedTo:self.view message:message delay:INFINITY];
     self.navigationController.navigationBar.userInteractionEnabled = NO;
 }
 
 - (void)hideProgressHUD:(BOOL)animated {
-    [self.progressHUD hide:animated];
-    self.navigationController.navigationBar.userInteractionEnabled = YES;
-}
-
-- (void)showProgressHUDCompleteMessage:(NSString *)message {
-    if (message) {
-        if (self.progressHUD.isHidden) [self.progressHUD show:YES];
-        self.progressHUD.labelText = message;
-        self.progressHUD.mode = MBProgressHUDModeCustomView;
-        [self.progressHUD hide:YES afterDelay:1.5];
-    } else {
-        [self.progressHUD hide:YES];
-    }
+    [_progressHUD hideAnimated:animated];
     self.navigationController.navigationBar.userInteractionEnabled = YES;
 }
 
