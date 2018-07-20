@@ -6,9 +6,11 @@
 //  Copyright 2010 d3i. All rights reserved.
 //
 
-#import <SDWebImage/UIImage+ForceDecode.h>
 #import <SDWebImage/SDWebImageManager.h>
 #import <SDWebImage/SDWebImageOperation.h>
+#import <SDWebImage/SDWebImageCodersManager.h>
+#import <SDWebImage/SDWebImageGIFCoder.h>
+
 #import <AssetsLibrary/AssetsLibrary.h>
 #import "MWPhoto.h"
 #import "MWPhotoBrowser.h"
@@ -208,9 +210,23 @@
     }
 }
 
+- (void)prepareImageCoders {
+    NSArray *coders = [[SDWebImageCodersManager sharedInstance].coders mutableCopy];
+    if (coders.firstObject != [SDWebImageGIFCoder sharedCoder]) {
+        for (id<SDWebImageCoder> coder in coders) {
+            [[SDWebImageCodersManager sharedInstance] removeCoder:coder];
+        }
+        [[SDWebImageCodersManager sharedInstance] addCoder:[SDWebImageGIFCoder sharedCoder]];
+        for (id<SDWebImageCoder> coder in coders) {
+            [[SDWebImageCodersManager sharedInstance] addCoder:coder];
+        }
+    }
+}
+
 // Load from local file
 - (void)_performLoadUnderlyingImageAndNotifyWithWebURL:(NSURL *)url {
     @try {
+        [self prepareImageCoders];
         SDWebImageManager *manager = [SDWebImageManager sharedManager];
         _webImageOperation = [[manager imageDownloader] downloadImageWithURL:url
                                                                      options:0
