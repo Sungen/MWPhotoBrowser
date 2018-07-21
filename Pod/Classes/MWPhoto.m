@@ -216,39 +216,45 @@
 // Load from local file
 - (void)_performLoadUnderlyingImageAndNotifyWithWebURL:(NSURL *)url {
     @try {
-        _webImageOperation = [[[SDWebImageManager sharedManager] imageDownloader] downloadImageWithURL:url
-                                                                                               options:0
-                                                                                              progress:^(NSInteger receivedSize, NSInteger expectedSize, NSURL * _Nullable targetURL) {
-                                                                                                  if (expectedSize > 0) {
-                                                                                                      float progress = receivedSize / (float)expectedSize;
-                                                                                                      NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:
-                                                                                                                            [NSNumber numberWithFloat:progress], @"progress",
-                                                                                                                            self, @"photo", nil];
-                                                                                                      [[NSNotificationCenter defaultCenter] postNotificationName:MWPHOTO_PROGRESS_NOTIFICATION object:dict];
-                                                                                                  }
-                                                                                              } completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, BOOL finished) {
-                                                                                                  if (error) {
-                                                                                                      MWLog(@"SDWebImage failed to download image: %@", error);
-                                                                                                  }
-                                                                                                  self->_webImageOperation = nil;
-                                                                                                  // Step 1. Check if original compressed image data is "GIF"
-                                                                                                  BOOL isGIF = (image.sd_imageFormat == SDImageFormatGIF || [NSData sd_imageFormatForImageData:data] == SDImageFormatGIF);
-                                                                                                  if (isGIF) {
-                                                                                                      // Step 2. Create FLAnimatedImage
-                                                                                                      FLAnimatedImage *animatedImage = [[FLAnimatedImage alloc] initWithAnimatedGIFData:data];
-                                                                                                      // Step 3. Set animatedImage or normal image
-                                                                                                      if (animatedImage) {
-                                                                                                          self.underlyingImage = (UIImage *)animatedImage;
-                                                                                                      } else {
-                                                                                                          self.underlyingImage = image;
-                                                                                                      }
-                                                                                                  }else {
-                                                                                                      self.underlyingImage = image;
-                                                                                                  }
-                                                                                                  dispatch_async(dispatch_get_main_queue(), ^{
-                                                                                                      [self imageLoadingComplete];
-                                                                                                  });
-                                                                                              }];
+        _webImageOperation = [[SDWebImageManager sharedManager] loadImageWithURL:url
+                                                                         options:0
+                                                                        progress:^(NSInteger receivedSize, NSInteger expectedSize, NSURL * _Nullable targetURL) {
+                                                                            if (expectedSize > 0) {
+                                                                                float progress = receivedSize / (float)expectedSize;
+                                                                                NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:
+                                                                                                      [NSNumber numberWithFloat:progress], @"progress",
+                                                                                                      self, @"photo", nil];
+                                                                                [[NSNotificationCenter defaultCenter] postNotificationName:MWPHOTO_PROGRESS_NOTIFICATION object:dict];
+                                                                            }
+                                                                        } completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
+                                                                            self->_webImageOperation = nil;
+                                                                            self.underlyingImage = image;
+                                                                            if (error) {
+                                                                                MWLog(@"SDWebImage failed to download image: %@", error);
+                                                                            }else {
+                                                                                // Step 1. Check memory cache (associate object)
+                                                                                FLAnimatedImage *associatedAnimatedImage = image.sd_FLAnimatedImage;
+                                                                                if (associatedAnimatedImage) {
+                                                                                    // Asscociated animated image exist
+                                                                                    self.underlyingImage = (UIImage *)associatedAnimatedImage;
+                                                                                }else {
+                                                                                    // Step 2. Check if original compressed image data is "GIF"
+                                                                                    BOOL isGIF = (image.sd_imageFormat == SDImageFormatGIF || [NSData sd_imageFormatForImageData:data] == SDImageFormatGIF);
+                                                                                    if (isGIF) {
+                                                                                        // Step 3. Create FLAnimatedImage
+                                                                                        FLAnimatedImage *animatedImage = [[FLAnimatedImage alloc] initWithAnimatedGIFData:data];
+                                                                                        // Step 4. Set animatedImage or normal image
+                                                                                        if (animatedImage) {
+                                                                                            image.sd_FLAnimatedImage = animatedImage;
+                                                                                            self.underlyingImage = (UIImage *)animatedImage;
+                                                                                        }
+                                                                                }
+                                                                                }
+                                                                            }
+                                                                            dispatch_async(dispatch_get_main_queue(), ^{
+                                                                                [self imageLoadingComplete];
+                                                                            });
+                                                                        }];
     } @catch (NSException *e) {
         MWLog(@"Photo from web: %@", e);
         _webImageOperation = nil;

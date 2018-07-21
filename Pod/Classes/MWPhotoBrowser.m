@@ -645,7 +645,6 @@
             [page displayImage];
             [self loadAdjacentPhotosIfNecessary:photo];
         } else {
-            
             // Failed to load
             [page displayImageFailure];
         }
