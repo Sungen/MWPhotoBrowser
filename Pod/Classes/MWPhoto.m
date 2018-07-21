@@ -230,21 +230,21 @@
                                                                                                   if (error) {
                                                                                                       MWLog(@"SDWebImage failed to download image: %@", error);
                                                                                                   }
+                                                                                                  self->_webImageOperation = nil;
                                                                                                   // Step 1. Check if original compressed image data is "GIF"
                                                                                                   BOOL isGIF = (image.sd_imageFormat == SDImageFormatGIF || [NSData sd_imageFormatForImageData:data] == SDImageFormatGIF);
-                                                                                                  if (!isGIF) {
+                                                                                                  if (isGIF) {
+                                                                                                      // Step 2. Create FLAnimatedImage
+                                                                                                      FLAnimatedImage *animatedImage = [[FLAnimatedImage alloc] initWithAnimatedGIFData:data];
+                                                                                                      // Step 3. Set animatedImage or normal image
+                                                                                                      if (animatedImage) {
+                                                                                                          self.underlyingImage = (UIImage *)animatedImage;
+                                                                                                      } else {
+                                                                                                          self.underlyingImage = image;
+                                                                                                      }
+                                                                                                  }else {
                                                                                                       self.underlyingImage = image;
-                                                                                                      return;
                                                                                                   }
-                                                                                                  // Step 2. Create FLAnimatedImage
-                                                                                                  FLAnimatedImage *animatedImage = [[FLAnimatedImage alloc] initWithAnimatedGIFData:data];
-                                                                                                  // Step 3. Set animatedImage or normal image
-                                                                                                  if (animatedImage) {
-                                                                                                      self.underlyingImage = animatedImage;
-                                                                                                  } else {
-                                                                                                      self.underlyingImage = image;
-                                                                                                  }
-                                                                                                  self->_webImageOperation = nil;
                                                                                                   dispatch_async(dispatch_get_main_queue(), ^{
                                                                                                       [self imageLoadingComplete];
                                                                                                   });

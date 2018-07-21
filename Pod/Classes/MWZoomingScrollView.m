@@ -143,8 +143,8 @@
                 _photoImageView.image = nil;
                 _photoImageView.animatedImage = (FLAnimatedImage *)img;
             }else {
-                _photoImageView.image = img;
                 _photoImageView.animatedImage = nil;
+                _photoImageView.image = img;
             }
 			_photoImageView.hidden = NO;
 			
