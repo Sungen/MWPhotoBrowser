@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name = 'MWPhotoBrowser'
-  s.version = '2.1.5'
+  s.version = '2.1.3'
   s.license = 'MIT'
   s.summary = 'A simple iOS photo and video browser with optional grid view, captions and selections.'
   s.description = <<-DESCRIPTION
@@ -25,7 +25,7 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/mwaterfall/MWPhotoBrowser.git',
-    :tag => '2.1.5'
+    :tag => '2.1.3'
   }
   s.platform = :ios, '9.0'
   s.source_files = 'Pod/Classes/**/*'
@@ -40,8 +40,7 @@ Pod::Spec.new do |s|
   s.dependency 'MBProgressHUD'
   s.dependency 'DACircularProgress'
   s.dependency 'Masonry', '~> 1.0.1'
-
-  # SDWebImage
   s.dependency 'SDWebImage'
+  s.dependency 'SDWebImage/GIF'
 
 end

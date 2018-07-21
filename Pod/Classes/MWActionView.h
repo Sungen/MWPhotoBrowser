@@ -32,7 +32,7 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
 @property(nonatomic, strong) UIButton *prevButton;
 @property(nonatomic, strong) UIButton *nextButton;
 
-@property(nonatomic, strong) UIButton *menuButton;
+//@property(nonatomic, strong) UIButton *menuButton;
 @property(nonatomic, strong) UIView   *menuView;
 
 @property(nonatomic, strong) UIView   *bottomView;

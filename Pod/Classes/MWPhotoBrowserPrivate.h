@@ -8,7 +8,6 @@
 
 #import <UIKit/UIKit.h>
 #import <MBProgressHUD/MBProgressHUD.h>
-#import <MediaPlayer/MediaPlayer.h>
 #import "MWZoomingScrollView.h"
 #import "MWPlayerView.h"
 

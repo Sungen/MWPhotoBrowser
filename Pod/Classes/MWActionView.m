@@ -71,7 +71,7 @@
     
     self.prevButton.frame = CGRectMake(16, CGRectGetMidY(self.bounds)-15, 30, 30);
     self.nextButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-16-30, CGRectGetMinY(self.prevButton.frame), 30, 30);
-    self.menuButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-20-30, CGRectGetHeight(self.bounds)-72-30, 30, 30);
+//    self.menuButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-20-30, CGRectGetHeight(self.bounds)-72-30, 30, 30);
     self.bottomView.frame = CGRectMake(0, CGRectGetHeight(self.bounds)-54, CGRectGetWidth(self.bounds), 54);
     self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bottomView.bounds)-16-30, CGRectGetHeight(self.bottomView.bounds)-8-30, 30, 30);
     self.shareButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame)-16-30, CGRectGetMinY(self.moreButton.frame), 30, 30);
@@ -147,14 +147,14 @@
     button.autoresizingMask = UIViewAutoresizingFlexibleRightMargin;
 //    button.frame = CGRectMake(CGRectGetWidth(self.bounds)-16-30, CGRectGetMinY(self.prevButton.frame), 30, 30);
     
-    button = [UIButton buttonWithType:UIButtonTypeCustom];
-    [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageDown" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
-    [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageDownTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
-    [button addTarget:self action:@selector(tapAction:) forControlEvents:UIControlEventTouchUpInside];
-    button.tag = MCActionTypeMenu;
-    [self addSubview:button];
-    self.menuButton = button;
-    button.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleBottomMargin;
+//    button = [UIButton buttonWithType:UIButtonTypeCustom];
+//    [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageDown" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
+//    [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageDownTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
+//    [button addTarget:self action:@selector(tapAction:) forControlEvents:UIControlEventTouchUpInside];
+//    button.tag = MCActionTypeMenu;
+//    [self addSubview:button];
+//    self.menuButton = button;
+//    button.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleBottomMargin;
 //    button.frame = CGRectMake(CGRectGetWidth(self.bounds)-20-30, CGRectGetHeight(self.bounds)-72, 30, 30);
     
     UIView *toolView = [[UIView alloc] initWithFrame:CGRectZero];
@@ -234,7 +234,7 @@
 }
 
 - (void)tapAction:(UIButton *)button {
-    if (button.tag == MCActionTypeMenu) {
+    if (button.tag == MCActionTypeMore) {
         self.menuView.hidden = NO;
     }else if (button.tag == MCActionTypeDownToLocal || button.tag == MCActionTypeDelete){
         self.menuView.hidden = YES;
