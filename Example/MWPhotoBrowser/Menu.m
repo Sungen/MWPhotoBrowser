@@ -178,7 +178,7 @@
 	switch (indexPath.row) {
 		case 0:
             // Photos
-            photo = [MWPhoto photoWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"photo2" ofType:@"jpg"]]];
+            photo = [MWPhoto photoWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"photo1" ofType:@"gif"]]];
             photo.caption = @"The London Eye is a giant Ferris wheel situated on the banks of the River Thames, in London, England.";
 			[photos addObject:photo];
             // Options

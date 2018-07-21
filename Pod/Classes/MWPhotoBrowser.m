@@ -601,7 +601,7 @@
 		// Get image or obtain in background
 		if ([photo underlyingImage]) {
 			return [photo underlyingImage];
-		} else {
+        }else {
             [photo loadUnderlyingImageAndNotify];
 		}
 	}

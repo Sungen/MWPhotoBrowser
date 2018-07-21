@@ -139,7 +139,13 @@
 			[self hideLoadingIndicator];
 			
 			// Set image
-			_photoImageView.image = img;
+            if ([img isKindOfClass:[FLAnimatedImage class]]) {
+                _photoImageView.image = nil;
+                _photoImageView.animatedImage = (FLAnimatedImage *)img;
+            }else {
+                _photoImageView.image = img;
+                _photoImageView.animatedImage = nil;
+            }
 			_photoImageView.hidden = NO;
 			
 			// Setup photo frame
