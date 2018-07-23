@@ -1077,34 +1077,34 @@
             break;
         }
 		case 9: {
-            @synchronized(_assets) {
-                NSMutableArray *copy = [_assets copy];
-                if (NSClassFromString(@"PHAsset")) {
-                    // Photos library
-                    UIScreen *screen = [UIScreen mainScreen];
-                    CGFloat scale = screen.scale;
-                    // Sizing is very rough... more thought required in a real implementation
-                    CGFloat imageSize = MAX(screen.bounds.size.width, screen.bounds.size.height) * 1.5;
-                    CGSize imageTargetSize = CGSizeMake(imageSize * scale, imageSize * scale);
-                    CGSize thumbTargetSize = CGSizeMake(imageSize / 3.0 * scale, imageSize / 3.0 * scale);
-                    for (PHAsset *asset in copy) {
-                        [photos addObject:[MWPhoto photoWithAsset:asset targetSize:imageTargetSize]];
-                        [thumbs addObject:[MWPhoto photoWithAsset:asset targetSize:thumbTargetSize]];
-                    }
-                } else {
-                    // Assets library
-                    for (ALAsset *asset in copy) {
-                        MWPhoto *photo = [MWPhoto photoWithURL:asset.defaultRepresentation.url];
-                        [photos addObject:photo];
-                        MWPhoto *thumb = [MWPhoto photoWithImage:[UIImage imageWithCGImage:asset.thumbnail]];
-                        [thumbs addObject:thumb];
-                        if ([asset valueForProperty:ALAssetPropertyType] == ALAssetTypeVideo) {
-                            photo.videoURL = asset.defaultRepresentation.url;
-                            thumb.isVideo = true;
-                        }
-                    }
-                }
-            }
+//            @synchronized(_assets) {
+//                NSMutableArray *copy = [_assets copy];
+//                if (NSClassFromString(@"PHAsset")) {
+//                    // Photos library
+//                    UIScreen *screen = [UIScreen mainScreen];
+//                    CGFloat scale = screen.scale;
+//                    // Sizing is very rough... more thought required in a real implementation
+//                    CGFloat imageSize = MAX(screen.bounds.size.width, screen.bounds.size.height) * 1.5;
+//                    CGSize imageTargetSize = CGSizeMake(imageSize * scale, imageSize * scale);
+//                    CGSize thumbTargetSize = CGSizeMake(imageSize / 3.0 * scale, imageSize / 3.0 * scale);
+//                    for (PHAsset *asset in copy) {
+//                        [photos addObject:[MWPhoto photoWithAsset:asset targetSize:imageTargetSize]];
+//                        [thumbs addObject:[MWPhoto photoWithAsset:asset targetSize:thumbTargetSize]];
+//                    }
+//                } else {
+//                    // Assets library
+//                    for (ALAsset *asset in copy) {
+//                        MWPhoto *photo = [MWPhoto photoWithURL:asset.defaultRepresentation.url];
+//                        [photos addObject:photo];
+//                        MWPhoto *thumb = [MWPhoto photoWithImage:[UIImage imageWithCGImage:asset.thumbnail]];
+//                        [thumbs addObject:thumb];
+//                        if ([asset valueForProperty:ALAssetPropertyType] == ALAssetTypeVideo) {
+//                            photo.videoURL = asset.defaultRepresentation.url;
+//                            thumb.isVideo = true;
+//                        }
+//                    }
+//                }
+//            }
 			break;
         }
 		default: break;
@@ -1181,13 +1181,13 @@
     return _photos.count;
 }
 
-- (id <MWPhoto>)photoBrowser:(MWPhotoBrowser *)photoBrowser photoAtIndex:(NSUInteger)index {
+- (MWPhoto *)photoBrowser:(MWPhotoBrowser *)photoBrowser photoAtIndex:(NSUInteger)index {
     if (index < _photos.count)
         return [_photos objectAtIndex:index];
     return nil;
 }
 
-- (id <MWPhoto>)photoBrowser:(MWPhotoBrowser *)photoBrowser thumbPhotoAtIndex:(NSUInteger)index {
+- (MWPhoto *)photoBrowser:(MWPhotoBrowser *)photoBrowser thumbPhotoAtIndex:(NSUInteger)index {
     if (index < _thumbs.count)
         return [_thumbs objectAtIndex:index];
     return nil;

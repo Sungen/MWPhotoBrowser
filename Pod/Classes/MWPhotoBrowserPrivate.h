@@ -58,6 +58,7 @@
     BOOL _leaveStatusBarAlone;
 	BOOL _performingLayout;
 	BOOL _rotating;
+    BOOL _scrolling;
     BOOL _viewIsActive; // active as in it's in the view heirarchy
     BOOL _didSavePreviousStateOfNavBar;
     BOOL _skipNextPagingScrollViewPositioning;
@@ -81,7 +82,7 @@
 - (void)tilePages;
 - (BOOL)isDisplayingPageForIndex:(NSUInteger)index;
 - (MWZoomingScrollView *)pageDisplayedAtIndex:(NSUInteger)index;
-- (MWZoomingScrollView *)pageDisplayingPhoto:(id<MWPhoto>)photo;
+- (MWZoomingScrollView *)pageDisplayingPhoto:(MWPhoto *)photo;
 - (MWZoomingScrollView *)dequeueRecycledPage;
 - (void)configurePage:(MWZoomingScrollView *)page forIndex:(NSUInteger)index;
 - (void)didStartViewingPageAtIndex:(NSUInteger)index;
@@ -107,10 +108,10 @@
 
 // Data
 - (NSUInteger)numberOfPhotos;
-- (id<MWPhoto>)photoAtIndex:(NSUInteger)index;
-- (id<MWPhoto>)thumbPhotoAtIndex:(NSUInteger)index;
-- (UIImage *)imageForPhoto:(id<MWPhoto>)photo;
-- (void)loadAdjacentPhotosIfNecessary:(id<MWPhoto>)photo;
+- (MWPhoto *)photoAtIndex:(NSUInteger)index;
+- (MWPhoto *)thumbPhotoAtIndex:(NSUInteger)index;
+- (UIImage *)imageForPhoto:(MWPhoto *)photo;
+- (void)loadAdjacentPhotosIfNecessary:(MWPhoto *)photo;
 - (void)releaseAllUnderlyingPhotos:(BOOL)preserveCurrent;
 
 @end

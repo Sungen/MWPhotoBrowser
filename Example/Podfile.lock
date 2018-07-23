@@ -1,7 +1,7 @@
 PODS:
   - DACircularProgress (2.3.1)
   - Expecta (1.0.6)
-  - "Expecta+Snapshots (3.1.1)":
+  - Expecta+Snapshots (3.1.1):
     - Expecta (~> 1.0)
     - FBSnapshotTestCase/Core (~> 2.0)
     - Specta (~> 1.0)
@@ -27,37 +27,26 @@ PODS:
 
 DEPENDENCIES:
   - Expecta
-  - "Expecta+Snapshots"
+  - Expecta+Snapshots
   - FBSnapshotTestCase
   - MWPhotoBrowser (from `../`)
   - Specta
 
-SPEC REPOS:
-  https://github.com/cocoapods/specs.git:
-    - DACircularProgress
-    - Expecta
-    - "Expecta+Snapshots"
-    - FBSnapshotTestCase
-    - FLAnimatedImage
-    - MBProgressHUD
-    - SDWebImage
-    - Specta
-
 EXTERNAL SOURCES:
   MWPhotoBrowser:
-    :path: "../"
+    :path: ../
 
 SPEC CHECKSUMS:
   DACircularProgress: 4dd437c0fc3da5161cb289e07ac449493d41db71
   Expecta: 3b6bd90a64b9a1dcb0b70aa0e10a7f8f631667d5
-  "Expecta+Snapshots": dcff217eef506dabd6dfdc7864ea2da321fafbb8
+  Expecta+Snapshots: dcff217eef506dabd6dfdc7864ea2da321fafbb8
   FBSnapshotTestCase: 094f9f314decbabe373b87cc339bea235a63e07a
   FLAnimatedImage: 4a0b56255d9b05f18b6dd7ee06871be5d3b89e31
   MBProgressHUD: e7baa36a220447d8aeb12769bf0585582f3866d9
-  MWPhotoBrowser: f5daf850d057638735af9b91ab475209db71debd
+  MWPhotoBrowser: 34344139b00508e2060760f889195f9f985a7b33
   SDWebImage: 624d6e296c69b244bcede364c72ae0430ac14681
   Specta: 3e1bd89c3517421982dc4d1c992503e48bd5fe66
 
 PODFILE CHECKSUM: e9a88c165e7e75ff072303cc1bb12b01ed6076dd
 
-COCOAPODS: 1.5.3
+COCOAPODS: 1.3.1

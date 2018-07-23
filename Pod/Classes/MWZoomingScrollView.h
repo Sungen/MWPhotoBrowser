@@ -7,7 +7,6 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "MWPhotoProtocol.h"
 #import "MWTapDetectingImageView.h"
 #import "MWTapDetectingView.h"
 
@@ -17,8 +16,8 @@
 
 }
 
-@property () NSUInteger index;
-@property (nonatomic) id <MWPhoto> photo;
+@property (nonatomic) NSUInteger index;
+@property (nonatomic) MWPhoto * photo;
 @property (nonatomic, weak) UIButton *selectedButton;
 @property (nonatomic, weak) UIButton *playButton;
 

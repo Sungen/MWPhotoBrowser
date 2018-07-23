@@ -8,28 +8,30 @@
 
 #import <Foundation/Foundation.h>
 #import <Photos/Photos.h>
-#import "MWPhotoProtocol.h"
 
 // This class models a photo/image and it's caption
 // If you want to handle photos, caching, decompression
 // yourself then you can simply ensure your custom data model
 // conforms to MWPhotoProtocol
-@interface MWPhoto : NSObject <MWPhoto>
+@interface MWPhoto : NSObject
 
-@property (nonatomic, strong) NSString *caption;
+@property (nonatomic, strong) NSString *caption; // 标题
+
+@property (nonatomic, strong) UIImage *image; // 文件地址
 @property (nonatomic, strong) NSURL *videoURL;
+
+@property (nonatomic, strong) NSURL *photoURL;
+@property (nonatomic, strong) UIImage *underlyingImage;
+
 @property (nonatomic) BOOL emptyImage;
 @property (nonatomic) BOOL isVideo;
 
 + (MWPhoto *)photoWithImage:(UIImage *)image;
 + (MWPhoto *)photoWithURL:(NSURL *)url;
-+ (MWPhoto *)photoWithAsset:(PHAsset *)asset targetSize:(CGSize)targetSize;
 + (MWPhoto *)videoWithURL:(NSURL *)url; // Initialise video with no poster image
 
-- (id)init;
 - (id)initWithImage:(UIImage *)image;
 - (id)initWithURL:(NSURL *)url;
-- (id)initWithAsset:(PHAsset *)asset targetSize:(CGSize)targetSize;
 - (id)initWithVideoURL:(NSURL *)url;
 
 @end

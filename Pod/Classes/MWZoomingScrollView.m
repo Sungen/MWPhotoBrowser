@@ -6,7 +6,9 @@
 //  Copyright 2010 d3i. All rights reserved.
 //
 
-#import <DACircularProgress/DACircularProgressView.h>
+#import <SDWebImage/UIView+WebCache.h>
+#import <SDWebImage/UIImageView+WebCache.h>
+
 #import "MWCommon.h"
 #import "MWZoomingScrollView.h"
 #import "MWPhotoBrowser.h"
@@ -20,9 +22,7 @@
     MWPhotoBrowser __weak *_photoBrowser;
 	MWTapDetectingView *_tapView; // for background taps
 	MWTapDetectingImageView *_photoImageView;
-	DACircularProgressView *_loadingIndicator;
     UIImageView *_loadingError;
-    
 }
 
 @end
@@ -48,22 +48,9 @@
 		_photoImageView.tapDelegate = self;
 		_photoImageView.contentMode = UIViewContentModeCenter;
 		_photoImageView.backgroundColor = [UIColor blackColor];
+        [_photoImageView sd_setShowActivityIndicatorView:YES];
+        [_photoImageView sd_setIndicatorStyle:UIActivityIndicatorViewStyleWhite];
 		[self addSubview:_photoImageView];
-		
-		// Loading indicator
-		_loadingIndicator = [[DACircularProgressView alloc] initWithFrame:CGRectMake(140.0f, 30.0f, 40.0f, 40.0f)];
-        _loadingIndicator.userInteractionEnabled = NO;
-        _loadingIndicator.thicknessRatio = 0.1;
-        _loadingIndicator.roundedCorners = NO;
-		_loadingIndicator.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin |
-        UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleRightMargin;
-		[self addSubview:_loadingIndicator];
-
-        // Listen progress notifications
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(setProgressFromNotification:)
-                                                     name:MWPHOTO_PROGRESS_NOTIFICATION
-                                                   object:nil];
         
 		// Setup
 		self.backgroundColor = [UIColor blackColor];
@@ -78,10 +65,7 @@
 }
 
 - (void)dealloc {
-    if ([_photo respondsToSelector:@selector(cancelAnyLoading)]) {
-        [_photo cancelAnyLoading];
-    }
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [_photoImageView sd_cancelCurrentImageLoad];
 }
 
 - (void)prepareForReuse {
@@ -104,75 +88,70 @@
 
 #pragma mark - Image
 
-- (void)setPhoto:(id<MWPhoto>)photo {
-    // Cancel any loading on old photo
-    if (_photo && photo == nil) {
-        if ([_photo respondsToSelector:@selector(cancelAnyLoading)]) {
-            [_photo cancelAnyLoading];
-        }
-    }
+- (void)setPhoto:(MWPhoto *)photo {
     _photo = photo;
-    UIImage *img = [_photoBrowser imageForPhoto:_photo];
-    if (img) {
-        [self displayImage];
-    } else {
-        // Will be loading so show loading
-        [self showLoadingIndicator];
-    }
+    [self displayImage];
 }
 
 // Get and display image
 - (void)displayImage {
 	if (_photo && _photoImageView.image == nil) {
 		
-		// Reset
-		self.maximumZoomScale = 1;
-		self.minimumZoomScale = 1;
-		self.zoomScale = 1;
-		self.contentSize = CGSizeMake(0, 0);
+        // Reset
+        self.maximumZoomScale = 1;
+        self.minimumZoomScale = 1;
+        self.zoomScale = 1;
+        self.contentSize = CGSizeMake(0, 0);
 		
 		// Get image from browser as it handles ordering of fetching
-		UIImage *img = [_photoBrowser imageForPhoto:_photo];
-		if (img) {
-			
-			// Hide indicator
-			[self hideLoadingIndicator];
-			
-			// Set image
-            if ([img isKindOfClass:[FLAnimatedImage class]]) {
-                _photoImageView.image = nil;
-                _photoImageView.animatedImage = (FLAnimatedImage *)img;
-            }else {
-                _photoImageView.animatedImage = nil;
-                _photoImageView.image = img;
-            }
-			_photoImageView.hidden = NO;
-			
-			// Setup photo frame
-			CGRect photoImageViewFrame;
-			photoImageViewFrame.origin = CGPointZero;
-			photoImageViewFrame.size = img.size;
-			_photoImageView.frame = photoImageViewFrame;
-			self.contentSize = photoImageViewFrame.size;
-
-			// Set zoom to minimum zoom
-			[self setMaxMinZoomScalesForCurrentBounds];
-			
-		} else  {
-
-            // Show image failure
-            [self displayImageFailure];
-			
-		}
-		[self setNeedsLayout];
-	}
+        _photoImageView.hidden = NO;
+        UIImage *image = [_photoBrowser imageForPhoto:_photo];
+        if (image) {
+            _photoImageView.image = image;
+            // Setup photo frame
+            CGRect photoImageViewFrame;
+            photoImageViewFrame.origin = CGPointZero;
+            photoImageViewFrame.size = _photo.image.size;
+            _photoImageView.frame = photoImageViewFrame;
+            self.contentSize = photoImageViewFrame.size;
+            
+            // Set zoom to minimum zoom
+            [self setMaxMinZoomScalesForCurrentBounds];
+            [self setNeedsLayout];
+        }else {
+            UIImage *placeholderImage = [UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageError" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]];
+            __weak typeof(self) weakSelf = self;
+            [_photoImageView sd_setImageWithURL:_photo.photoURL
+                               placeholderImage:placeholderImage
+                                      completed:^(UIImage * _Nullable image,
+                                                  NSError * _Nullable error,
+                                                  SDImageCacheType cacheType,
+                                                  NSURL * _Nullable imageURL) {
+                                          __strong typeof(self) strongSelf = weakSelf;
+                                          if (!strongSelf) return;
+                                          if (!error && image) {
+                                              // Setup photo frame
+                                              CGRect photoImageViewFrame;
+                                              photoImageViewFrame.origin = CGPointZero;
+                                              photoImageViewFrame.size = image.size;
+                                              strongSelf->_photoImageView.frame = photoImageViewFrame;
+                                              strongSelf.contentSize = photoImageViewFrame.size;
+                                              strongSelf->_photo.underlyingImage = image;
+                                              // Set zoom to minimum zoom
+                                              [strongSelf setMaxMinZoomScalesForCurrentBounds];
+                                          }else {
+                                              [strongSelf displayImageFailure];
+                                          }
+                                          [strongSelf setNeedsLayout];
+                                      }];
+        }
+        
+    }
 }
 
 // Image failed so just show black!
 - (void)displayImageFailure {
-    [self hideLoadingIndicator];
     _photoImageView.image = nil;
-    
     // Show if image is not empty
     if (![_photo respondsToSelector:@selector(emptyImage)] || !_photo.emptyImage) {
         if (!_loadingError) {
@@ -196,32 +175,6 @@
         [_loadingError removeFromSuperview];
         _loadingError = nil;
     }
-}
-
-#pragma mark - Loading Progress
-
-- (void)setProgressFromNotification:(NSNotification *)notification {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        NSDictionary *dict = [notification object];
-        id <MWPhoto> photoWithProgress = [dict objectForKey:@"photo"];
-        if (photoWithProgress == self.photo) {
-            float progress = [[dict valueForKey:@"progress"] floatValue];
-            _loadingIndicator.progress = MAX(MIN(1, progress), 0);
-        }
-    });
-}
-
-- (void)hideLoadingIndicator {
-    _loadingIndicator.hidden = YES;
-}
-
-- (void)showLoadingIndicator {
-    self.zoomScale = 0;
-    self.minimumZoomScale = 0;
-    self.maximumZoomScale = 0;
-    _loadingIndicator.progress = 0;
-    _loadingIndicator.hidden = NO;
-    [self hideImageFailure];
 }
 
 #pragma mark - Setup
@@ -317,12 +270,6 @@
 	// Update tap view frame
 	_tapView.frame = self.bounds;
 	
-	// Position indicators (centre does not seem to work!)
-	if (!_loadingIndicator.hidden)
-        _loadingIndicator.frame = CGRectMake(floorf((self.bounds.size.width - _loadingIndicator.frame.size.width) / 2.),
-                                         floorf((self.bounds.size.height - _loadingIndicator.frame.size.height) / 2),
-                                         _loadingIndicator.frame.size.width,
-                                         _loadingIndicator.frame.size.height);
 	if (_loadingError)
         _loadingError.frame = CGRectMake(floorf((self.bounds.size.width - _loadingError.frame.size.width) / 2.),
                                          floorf((self.bounds.size.height - _loadingError.frame.size.height) / 2),

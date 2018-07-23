@@ -68,6 +68,7 @@
     _zoomPhotosToFill = YES;
     _performingLayout = NO; // Reset on view did appear
     _rotating = NO;
+    _scrolling = NO;
     _viewIsActive = NO;
     _visiblePages = [[NSMutableSet alloc] init];
     _recycledPages = [[NSMutableSet alloc] init];
@@ -75,12 +76,6 @@
     _thumbPhotos = [[NSMutableArray alloc] init];
     _didSavePreviousStateOfNavBar = NO;
     self.automaticallyAdjustsScrollViewInsets = NO;
-    
-    // Listen for MWPhoto notifications
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleMWPhotoLoadingDidEndNotification:)
-                                                 name:MWPHOTO_LOADING_DID_END_NOTIFICATION
-                                               object:nil];
     
 }
 
@@ -96,19 +91,20 @@
     // Create a copy in case this array is modified while we are looping through
     // Release photos
     NSArray *copy = [_photos copy];
-    for (id p in copy) {
-        if (p != [NSNull null]) {
-            if (preserveCurrent && p == [self photoAtIndex:self.currentIndex]) {
+    MWPhoto *current = [self photoAtIndex:self.currentIndex];
+    for (MWPhoto *p in copy) {
+        if ((id)p != [NSNull null]) {
+            if (preserveCurrent && current == p) {
                 continue; // skip current
             }
-            [p unloadUnderlyingImage];
+            p.underlyingImage = nil;
         }
     }
     // Release thumbs
     copy = [_thumbPhotos copy];
-    for (id p in copy) {
-        if (p != [NSNull null]) {
-            [p unloadUnderlyingImage];
+    for (MWPhoto *p in copy) {
+        if ((id)p != [NSNull null]) {
+            p.underlyingImage = nil;
         }
     }
 }
@@ -130,6 +126,7 @@
 - (void)viewDidLoad {
     
 	// View
+    self.view.frame = [UIScreen mainScreen].bounds;
 	self.view.backgroundColor = [UIColor blackColor];
     self.view.clipsToBounds = YES;
 	
@@ -151,27 +148,25 @@
 	[self.view addSubview:_pagingScrollView];
     
     // ActionView
-    MWActionView *actionView = [[MWActionView alloc] initWithFrame:[self.view bounds]];
-    actionView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+    _actionView = [[MWActionView alloc] initWithFrame:[self.view bounds]];
+    _actionView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
                                    UIViewAutoresizingFlexibleHeight |
                                    UIViewAutoresizingFlexibleTopMargin |
                                    UIViewAutoresizingFlexibleBottomMargin |
                                    UIViewAutoresizingFlexibleLeftMargin |
                                    UIViewAutoresizingFlexibleRightMargin);
-    actionView.delegate = self;
-    _actionView = actionView;
+    _actionView.delegate = self;
     
     // PlayerView
-    MWPlayerView *playerView = [[MWPlayerView alloc] initWithFrame:[self.view bounds]];
-    playerView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+    _playerView = [[MWPlayerView alloc] initWithFrame:[self.view bounds]];
+    _playerView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
                                    UIViewAutoresizingFlexibleHeight |
                                    UIViewAutoresizingFlexibleTopMargin |
                                    UIViewAutoresizingFlexibleBottomMargin |
                                    UIViewAutoresizingFlexibleLeftMargin |
                                    UIViewAutoresizingFlexibleRightMargin);
-    playerView.delegate = self;
-    playerView.actionView = _actionView;
-    _playerView = playerView;
+    _playerView.delegate = self;
+    _playerView.actionView = _actionView;
     
     // Update
     [self reloadData];
@@ -191,14 +186,14 @@
     [_recycledPages removeAllObjects];
     
     // Navigation buttons
-    if ([self.navigationController.viewControllers objectAtIndex:0] == self) {
+    if ([self.navigationController.viewControllers firstObject] == self) {
         // We're first on stack so show done button
         _doneButton = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Done", nil) style:UIBarButtonItemStylePlain target:self action:@selector(doneButtonPressed:)];
         // Set appearance
         [_doneButton setBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
-        [_doneButton setBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsLandscapePhone];
+        [_doneButton setBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsCompact];
         [_doneButton setBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsDefault];
-        [_doneButton setBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsLandscapePhone];
+        [_doneButton setBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsCompact];
         [_doneButton setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateNormal];
         [_doneButton setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateHighlighted];
         self.navigationItem.leftBarButtonItem = _doneButton;
@@ -209,9 +204,9 @@
         UIBarButtonItem *newBackButton = [[UIBarButtonItem alloc] initWithTitle:backButtonTitle style:UIBarButtonItemStylePlain target:nil action:nil];
         // Appearance
         [newBackButton setBackButtonBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
-        [newBackButton setBackButtonBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsLandscapePhone];
+        [newBackButton setBackButtonBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsCompact];
         [newBackButton setBackButtonBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsDefault];
-        [newBackButton setBackButtonBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsLandscapePhone];
+        [newBackButton setBackButtonBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsCompact];
         [newBackButton setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateNormal];
         [newBackButton setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateHighlighted];
         _previousViewControllerBackButton = previousViewController.navigationItem.backBarButtonItem; // remember previous
@@ -282,7 +277,7 @@
     }
     
     // Navigation bar appearance
-    if (!_viewIsActive && [self.navigationController.viewControllers objectAtIndex:0] != self) {
+    if (!_viewIsActive && [self.navigationController.viewControllers firstObject] != self) {
         [self storePreviousNavBarAppearance];
     }
     [self setNavBarAppearance:animated];
@@ -332,7 +327,7 @@
     // Check that we're disappearing for good
     // self.isMovingFromParentViewController just doesn't work, ever. Or self.isBeingDismissed
     if ((_doneButton && self.navigationController.isBeingDismissed) ||
-        ([self.navigationController.viewControllers objectAtIndex:0] != self && ![self.navigationController.viewControllers containsObject:self])) {
+        ([self.navigationController.viewControllers firstObject] != self && ![self.navigationController.viewControllers containsObject:self])) {
 
         // State
         _viewIsActive = NO;
@@ -379,7 +374,7 @@
     navBar.translucent = YES;
     navBar.barStyle = UIBarStyleBlackTranslucent;
     [navBar setBackgroundImage:nil forBarMetrics:UIBarMetricsDefault];
-    [navBar setBackgroundImage:nil forBarMetrics:UIBarMetricsLandscapePhone];
+    [navBar setBackgroundImage:nil forBarMetrics:UIBarMetricsCompact];
 }
 
 - (void)storePreviousNavBarAppearance {
@@ -390,7 +385,7 @@
     _previousNavBarHidden = self.navigationController.navigationBarHidden;
     _previousNavBarStyle = self.navigationController.navigationBar.barStyle;
     _previousNavigationBarBackgroundImageDefault = [self.navigationController.navigationBar backgroundImageForBarMetrics:UIBarMetricsDefault];
-    _previousNavigationBarBackgroundImageLandscapePhone = [self.navigationController.navigationBar backgroundImageForBarMetrics:UIBarMetricsLandscapePhone];
+    _previousNavigationBarBackgroundImageLandscapePhone = [self.navigationController.navigationBar backgroundImageForBarMetrics:UIBarMetricsCompact];
 }
 
 - (void)restorePreviousNavBarAppearance:(BOOL)animated {
@@ -402,7 +397,7 @@
         navBar.barTintColor = _previousNavBarBarTintColor;
         navBar.barStyle = _previousNavBarStyle;
         [navBar setBackgroundImage:_previousNavigationBarBackgroundImageDefault forBarMetrics:UIBarMetricsDefault];
-        [navBar setBackgroundImage:_previousNavigationBarBackgroundImageLandscapePhone forBarMetrics:UIBarMetricsLandscapePhone];
+        [navBar setBackgroundImage:_previousNavigationBarBackgroundImageLandscapePhone forBarMetrics:UIBarMetricsCompact];
         // Restore back button if we need to
         if (_previousViewControllerBackButton) {
             UIViewController *previousViewController = [self.navigationController topViewController]; // We've disappeared so previous is now top
@@ -417,9 +412,12 @@
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     [self layoutVisiblePages];
+    MWLog(@"==>>viewWillLayoutSubviews");
 }
 
 - (void)layoutVisiblePages {
+    
+    if (_scrolling) return;
     
 	// Flag
 	_performingLayout = YES;
@@ -564,14 +562,14 @@
     return _photoCount;
 }
 
-- (id<MWPhoto>)photoAtIndex:(NSUInteger)index {
-    id <MWPhoto> photo = nil;
+- (MWPhoto *)photoAtIndex:(NSUInteger)index {
+    MWPhoto * photo = nil;
     if (index < _photos.count) {
         if ([_photos objectAtIndex:index] == [NSNull null]) {
-            if ([_delegate respondsToSelector:@selector(photoBrowser:photoAtIndex:)]) {
-                photo = [_delegate photoBrowser:self photoAtIndex:index];
-            } else if (_fixedPhotosArray && index < _fixedPhotosArray.count) {
+            if (_fixedPhotosArray && index < _fixedPhotosArray.count) {
                 photo = [_fixedPhotosArray objectAtIndex:index];
+            } else if ([_delegate respondsToSelector:@selector(photoBrowser:photoAtIndex:)]) {
+                photo = [_delegate photoBrowser:self photoAtIndex:index];
             }
             if (photo) [_photos replaceObjectAtIndex:index withObject:photo];
         } else {
@@ -581,8 +579,8 @@
     return photo;
 }
 
-- (id<MWPhoto>)thumbPhotoAtIndex:(NSUInteger)index {
-    id <MWPhoto> photo = nil;
+- (MWPhoto *)thumbPhotoAtIndex:(NSUInteger)index {
+    MWPhoto * photo = nil;
     if (index < _thumbPhotos.count) {
         if ([_thumbPhotos objectAtIndex:index] == [NSNull null]) {
             if ([_delegate respondsToSelector:@selector(photoBrowser:thumbPhotoAtIndex:)]) {
@@ -596,61 +594,12 @@
     return photo;
 }
 
-- (UIImage *)imageForPhoto:(id<MWPhoto>)photo {
+- (UIImage *)imageForPhoto:(MWPhoto *)photo {
 	if (photo) {
 		// Get image or obtain in background
-		if ([photo underlyingImage]) {
-			return [photo underlyingImage];
-        }else {
-            [photo loadUnderlyingImageAndNotify];
-		}
+        return [photo underlyingImage];
 	}
 	return nil;
-}
-
-- (void)loadAdjacentPhotosIfNecessary:(id<MWPhoto>)photo {
-    MWZoomingScrollView *page = [self pageDisplayingPhoto:photo];
-    if (page) {
-        // If page is current page then initiate loading of previous and next pages
-        NSUInteger pageIndex = page.index;
-        if (_currentPageIndex == pageIndex) {
-            if (pageIndex > 0) {
-                // Preload index - 1
-                id <MWPhoto> photo = [self photoAtIndex:pageIndex-1];
-                if (![photo underlyingImage]) {
-                    [photo loadUnderlyingImageAndNotify];
-                    MWLog(@"Pre-loading image at index %lu", (unsigned long)pageIndex-1);
-                }
-            }
-            if (pageIndex < [self numberOfPhotos] - 1) {
-                // Preload index + 1
-                id <MWPhoto> photo = [self photoAtIndex:pageIndex+1];
-                if (![photo underlyingImage]) {
-                    [photo loadUnderlyingImageAndNotify];
-                    MWLog(@"Pre-loading image at index %lu", (unsigned long)pageIndex+1);
-                }
-            }
-        }
-    }
-}
-
-#pragma mark - MWPhoto Loading Notification
-
-- (void)handleMWPhotoLoadingDidEndNotification:(NSNotification *)notification {
-    id <MWPhoto> photo = [notification object];
-    MWZoomingScrollView *page = [self pageDisplayingPhoto:photo];
-    if (page) {
-        if ([photo underlyingImage]) {
-            // Successful load
-            [page displayImage];
-            [self loadAdjacentPhotosIfNecessary:photo];
-        } else {
-            // Failed to load
-            [page displayImageFailure];
-        }
-        // Update nav
-        [self updateNavigation];
-    }
 }
 
 #pragma mark - Paging
@@ -730,7 +679,7 @@
 	return thePage;
 }
 
-- (MWZoomingScrollView *)pageDisplayingPhoto:(id<MWPhoto>)photo {
+- (MWZoomingScrollView *)pageDisplayingPhoto:(MWPhoto *)photo {
 	MWZoomingScrollView *thePage = nil;
 	for (MWZoomingScrollView *page in _visiblePages) {
 		if (page.photo == photo) {
@@ -774,9 +723,9 @@
     if (index > 0) {
         // Release anything < index - 1
         for (i = 0; i < index-1; i++) { 
-            id photo = [_photos objectAtIndex:i];
-            if (photo != [NSNull null]) {
-                [photo unloadUnderlyingImage];
+            MWPhoto *photo = [_photos objectAtIndex:i];
+            if ((id)photo != [NSNull null]) {
+                photo.underlyingImage = nil;
                 [_photos replaceObjectAtIndex:i withObject:[NSNull null]];
                 MWLog(@"Released underlying image at index %lu", (unsigned long)i);
             }
@@ -785,9 +734,9 @@
     if (index < [self numberOfPhotos] - 1) {
         // Release anything > index + 1
         for (i = index + 2; i < _photos.count; i++) {
-            id photo = [_photos objectAtIndex:i];
-            if (photo != [NSNull null]) {
-                [photo unloadUnderlyingImage];
+            MWPhoto *photo = [_photos objectAtIndex:i];
+            if ((id)photo != [NSNull null]) {
+                photo.underlyingImage = nil;
                 [_photos replaceObjectAtIndex:i withObject:[NSNull null]];
                 MWLog(@"Released underlying image at index %lu", (unsigned long)i);
             }
@@ -796,7 +745,7 @@
     
     // Load adjacent images if needed and the photo is already
     // loaded. Also called after photo has been loaded in background
-    id <MWPhoto> currentPhoto = [self photoAtIndex:index];
+    MWPhoto * currentPhoto = [self photoAtIndex:index];
     if ([currentPhoto underlyingImage]) {
         // photo loaded so load ajacent now
         [self loadAdjacentPhotosIfNecessary:currentPhoto];
@@ -812,6 +761,32 @@
     // Update nav
     [self updateNavigation];
     
+}
+
+- (void)loadAdjacentPhotosIfNecessary:(MWPhoto *)photo {
+    MWZoomingScrollView *page = [self pageDisplayingPhoto:photo];
+    if (page) {
+        // If page is current page then initiate loading of previous and next pages
+        NSUInteger pageIndex = page.index;
+        if (_currentPageIndex == pageIndex) {
+            if (pageIndex > 0) {
+                // Preload index - 1
+                photo = [self photoAtIndex:pageIndex-1];
+                if (![photo underlyingImage]) {
+                    page.photo = photo;
+                    MWLog(@"Pre-loading image at index %lu", (unsigned long)pageIndex-1);
+                }
+            }
+            if (pageIndex < [self numberOfPhotos] - 1) {
+                // Preload index + 1
+                photo = [self photoAtIndex:pageIndex+1];
+                if (![photo underlyingImage]) {
+                    page.photo = photo;
+                    MWLog(@"Pre-loading image at index %lu", (unsigned long)pageIndex+1);
+                }
+            }
+        }
+    }
 }
 
 #pragma mark - Frame Calculations
@@ -861,6 +836,7 @@
 	
     // Checks
 	if (!_viewIsActive || _performingLayout || _rotating) return;
+    _scrolling = YES;
 	
 	// Tile pages
 	[self tilePages];
@@ -875,7 +851,7 @@
 	if (_currentPageIndex != previousCurrentPage) {
         [self didStartViewingPageAtIndex:index];
     }
-	
+    MWLog(@"==>>scrollViewDidScroll: %@", NSStringFromCGRect(visibleBounds));
 }
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
@@ -885,6 +861,7 @@
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
 	// Update nav when page changes
+    _scrolling = NO;
 	[self updateNavigation];
 }
 
@@ -974,31 +951,23 @@
 #pragma mark - Video
 
 - (void)playVideoAtIndex:(NSUInteger)index {
-    id photo = [self photoAtIndex:index];
-    if ([photo respondsToSelector:@selector(getVideoURL:)]) {
+    MWPhoto *photo = [self photoAtIndex:index];
+    if (photo.isVideo) {
         
         // Valid for playing
         [self clearCurrentVideo];
         _currentVideoIndex = index;
         [self setVideoPlayButtonVisible:NO atPageIndex:index];
 
-        // Get video and play
-        typeof(self) __weak weakSelf = self;
-        [photo getVideoURL:^(NSURL *url) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                // If the video is not playing anymore then bail
-                typeof(self) strongSelf = weakSelf;
-                if (!strongSelf) return;
-                if (strongSelf->_currentVideoIndex != index || !strongSelf->_viewIsActive) {
-                    return;
-                }
-                if (url) {
-                    [strongSelf _playVideo:url atPhotoIndex:index];
-                } else {
-                    [strongSelf setVideoPlayButtonVisible:YES atPageIndex:index];
-                }
-            });
-        }];
+        if (self->_currentVideoIndex != index || !self->_viewIsActive) {
+            return;
+        }
+        
+        if (photo.videoURL) {
+            [self _playVideo:photo.videoURL atPhotoIndex:index];
+        } else {
+            [self setVideoPlayButtonVisible:YES atPageIndex:index];
+        }
         
     }
 }
@@ -1157,8 +1126,9 @@
     _currentPageIndex = index;
 	if ([self isViewLoaded]) {
         [self jumpToPageAtIndex:index animated:NO];
-        if (!_viewIsActive)
+        if (!_viewIsActive) {
             [self tilePages]; // Force tiling if view is not visible
+        }
     }
 }
 
@@ -1182,7 +1152,7 @@
 - (void)actionButtonPressed:(id)sender {
 
     // Only react when image has loaded
-    id <MWPhoto> photo = [self photoAtIndex:_currentPageIndex];
+    MWPhoto * photo = [self photoAtIndex:_currentPageIndex];
     if ([self numberOfPhotos] > 0 && [photo underlyingImage]) {
         
         // If they have defined a delegate method then just message them
@@ -1192,14 +1162,6 @@
             self.activityViewController = [[UIActivityViewController alloc] initWithActivityItems:items applicationActivities:nil];
             
             // Show loading spinner after a couple of seconds
-//            double delayInSeconds = 2.0;
-//            dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-//            dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-//                if (self.activityViewController) {
-//                    [self showProgressHUDWithMessage:nil];
-//                }
-//            });
-        
             dispatch_async(dispatch_get_main_queue(), ^{
                 if (self.activityViewController) {
                     [self showProgressHUDWithMessage:nil];
@@ -1215,10 +1177,10 @@
             }];
         
             // iOS 8 - Set the Anchor Point for the popover, ipad
-//            if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8")) {
-//                UIBarButtonItem *barItem = [[UIBarButtonItem alloc] initWithCustomView:_actionView.shareButton];
-//                self.activityViewController.popoverPresentationController.barButtonItem = barItem;
-//            }
+            if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8") && UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+                UIBarButtonItem *barItem = [[UIBarButtonItem alloc] initWithCustomView:_actionView.shareButton];
+                self.activityViewController.popoverPresentationController.barButtonItem = barItem;
+            }
         
             [self presentViewController:self.activityViewController animated:YES completion:nil];
         

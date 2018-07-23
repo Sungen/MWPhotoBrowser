@@ -8,11 +8,10 @@
 
 #import <UIKit/UIKit.h>
 #import "MWPhoto.h"
-#import "MWPhotoProtocol.h"
 #import "MWActionView.h"
 
 // Debug Logging
-#if 0 // Set to 1 to enable debug logging
+#if 1 // Set to 1 to enable debug logging
 #define MWLog(x, ...) NSLog(x, ## __VA_ARGS__);
 #else
 #define MWLog(x, ...)
@@ -23,11 +22,11 @@
 @protocol MWPhotoBrowserDelegate <NSObject>
 
 - (NSUInteger)numberOfPhotosInPhotoBrowser:(MWPhotoBrowser *)photoBrowser;
-- (id <MWPhoto>)photoBrowser:(MWPhotoBrowser *)photoBrowser photoAtIndex:(NSUInteger)index;
+- (MWPhoto *)photoBrowser:(MWPhotoBrowser *)photoBrowser photoAtIndex:(NSUInteger)index;
 
 @optional
 
-- (id <MWPhoto>)photoBrowser:(MWPhotoBrowser *)photoBrowser thumbPhotoAtIndex:(NSUInteger)index;
+- (MWPhoto *)photoBrowser:(MWPhotoBrowser *)photoBrowser thumbPhotoAtIndex:(NSUInteger)index;
 - (NSString *)photoBrowser:(MWPhotoBrowser *)photoBrowser titleForPhotoAtIndex:(NSUInteger)index;
 - (void)photoBrowser:(MWPhotoBrowser *)photoBrowser didDisplayPhotoAtIndex:(NSUInteger)index;
 - (BOOL)photoBrowser:(MWPhotoBrowser *)photoBrowser isPhotoSelectedAtIndex:(NSUInteger)index;

@@ -7,6 +7,7 @@
 
 #import "MWPlayerView.h"
 #import "UIImage+MWPhotoBrowser.h"
+#import "MWPhotoBrowser.h"
 
 @interface MWPlayerView()
 
@@ -226,7 +227,7 @@
 }
 
 - (void)sliderValueDidChanged:(UISlider *)slider {
-    NSLog(@"==>>sliderValueDidChanged");
+    MWLog(@"==>>sliderValueDidChanged");
     Float64 duration = self.duration;
     Float64 current = slider.value * duration;
     NSString *timeText = [NSString stringWithFormat:@"%@/%@", [self convertTime:current], [self convertTime:duration]];
@@ -237,7 +238,7 @@
 }
 
 - (void)sliderDidTouchUp:(UISlider *)slider {
-    NSLog(@"==>>sliderDidTouchUp");
+    MWLog(@"==>>sliderDidTouchUp");
     self.isDraging = NO;
     self.actionView.tap.enabled = YES;
     if (self.isPlaying) {
@@ -246,7 +247,7 @@
 }
 
 - (void)sliderDidTouchDown:(UISlider *)slider {
-    NSLog(@"==>>sliderDidTouchDown");
+    MWLog(@"==>>sliderDidTouchDown");
     self.isDraging = YES;
     self.actionView.tap.enabled = NO;
     if (self.isPlaying) {
@@ -255,7 +256,7 @@
 }
 
 - (void)tap:(UITapGestureRecognizer *)tap {
-    NSLog(@"==>>tap");
+    MWLog(@"==>>tap");
     CGPoint point = [tap locationInView:self.actionView.slider];
     CGFloat value = point.x / CGRectGetWidth(self.actionView.slider.frame);
     [self.actionView.slider setValue:value animated:YES];
