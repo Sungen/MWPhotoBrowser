@@ -16,16 +16,16 @@
 - (void)setFrame:(CGRect)frame {
     [super setFrame:frame];
     
-    CAShapeLayer *borderLayer = (CAShapeLayer *)self.layer;
-    borderLayer.path = [UIBezierPath bezierPathWithRect:borderLayer.bounds].CGPath;
-//    borderLayer.path = [UIBezierPath bezierPathWithRoundedRect:borderLayer.bounds cornerRadius:CGRectGetWidth(borderLayer.bounds)/2].CGPath;
-    borderLayer.lineWidth = 1. / [[UIScreen mainScreen] scale];
-    //虚线边框
-    borderLayer.lineDashPattern = @[@4, @4];
-    //实线边框
-//    borderLayer.lineDashPattern = nil;
-    borderLayer.fillColor = [UIColor clearColor].CGColor;
-    borderLayer.strokeColor = [UIColor whiteColor].CGColor;
+//    CAShapeLayer *borderLayer = (CAShapeLayer *)self.layer;
+//    borderLayer.path = [UIBezierPath bezierPathWithRect:borderLayer.bounds].CGPath;
+////    borderLayer.path = [UIBezierPath bezierPathWithRoundedRect:borderLayer.bounds cornerRadius:CGRectGetWidth(borderLayer.bounds)/2].CGPath;
+//    borderLayer.lineWidth = 1. / [[UIScreen mainScreen] scale];
+//    //虚线边框
+//    borderLayer.lineDashPattern = @[@4, @4];
+//    //实线边框
+////    borderLayer.lineDashPattern = nil;
+//    borderLayer.fillColor = [UIColor clearColor].CGColor;
+//    borderLayer.strokeColor = [UIColor whiteColor].CGColor;
 }
 
 @end
