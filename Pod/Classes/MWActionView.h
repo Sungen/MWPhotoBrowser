@@ -50,6 +50,7 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
 
 - (void)setupPlayerUIWithTarget:(id)target;
 - (void)showPlayerUI:(BOOL)flag;
+- (void)showMenu:(BOOL)flag;
 
 @end
 

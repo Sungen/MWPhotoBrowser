@@ -753,14 +753,55 @@
     
     // Notify delegate
     if (index != _previousPageIndex) {
-        if ([_delegate respondsToSelector:@selector(photoBrowser:didDisplayPhotoAtIndex:)])
-            [_delegate photoBrowser:self didDisplayPhotoAtIndex:index];
+        [self didDisplayPhotoAtIndex:index];
         _previousPageIndex = index;
     }
     
     // Update nav
     [self updateNavigation];
     
+}
+
+- (void)didDisplayPhotoAtIndex:(NSInteger)index {
+    MWPhoto *photo = [self photoAtIndex:index];
+    if ([photo isMorePhoto]) {
+        // We're first on stack so show done button
+        UIBarButtonItem *morePhotoItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"查看全部", nil) style:UIBarButtonItemStylePlain target:self action:@selector(morePhotoButtonTap:)];
+        // Set appearance
+        [morePhotoItem setBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
+        [morePhotoItem setBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsCompact];
+        [morePhotoItem setBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsDefault];
+        [morePhotoItem setBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsCompact];
+        [morePhotoItem setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateNormal];
+        [morePhotoItem setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateHighlighted];
+        self.navigationItem.rightBarButtonItem = morePhotoItem;
+    }else {
+        self.navigationItem.rightBarButtonItem = nil;
+    }
+    if ([_delegate respondsToSelector:@selector(photoBrowser:didDisplayPhotoAtIndex:)]) {
+        [_delegate photoBrowser:self didDisplayPhotoAtIndex:index];
+    }
+}
+
+- (void)morePhotoButtonTap:(UIBarButtonItem *)barItem {
+    MWPhoto *photo = [self photoAtIndex:self.currentIndex];
+    if (![photo isMorePhoto]) {
+        self.navigationItem.rightBarButtonItem = nil;
+        return;
+    }
+    
+    // Create browser
+    MWPhotoBrowser *browser = [[MWPhotoBrowser alloc] initWithPhotos:photo.photoArray];
+//    browser.delegate = self;
+    browser.displayActionView = self.displayActionView;
+    browser.zoomPhotosToFill = self.zoomPhotosToFill;
+    browser.autoPlayOnAppear = self.autoPlayOnAppear;
+    [browser setCurrentPhotoIndex:0];
+    
+    // Modal
+    UINavigationController *nc = [[UINavigationController alloc] initWithRootViewController:browser];
+    nc.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+    [self presentViewController:nc animated:YES completion:nil];
 }
 
 - (void)loadAdjacentPhotosIfNecessary:(MWPhoto *)photo {
@@ -1065,6 +1106,7 @@
         
         // Tool
         [strongSelf->_actionView setAlpha:alpha];
+        [strongSelf->_actionView showMenu:NO];
 
     } completion:^(BOOL finished) {}];
     

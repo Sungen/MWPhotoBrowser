@@ -26,21 +26,25 @@
 
 #pragma mark - Class Methods
 
-+ (MWPhoto *)photoWithImage:(UIImage *)image {
-	return [[MWPhoto alloc] initWithImage:image];
++ (instancetype)photoWithImage:(UIImage *)image {
+    return [[MWPhoto alloc] initWithImage:image];
 }
 
-+ (MWPhoto *)photoWithURL:(NSURL *)url {
++ (instancetype)photoWithURL:(NSURL *)url {
     return [[MWPhoto alloc] initWithURL:url];
 }
 
-+ (MWPhoto *)videoWithURL:(NSURL *)url {
++ (instancetype)photoWithPhotoArray:(NSArray<MWPhoto *> *)photoArray {
+    return [[MWPhoto alloc] initWithPhotoArray:photoArray];
+}
+
++ (instancetype)videoWithURL:(NSURL *)url {
     return [[MWPhoto alloc] initWithVideoURL:url];
 }
 
 #pragma mark - Init
 
-- (id)initWithImage:(UIImage *)image {
+- (instancetype)initWithImage:(UIImage *)image {
     if ((self = [super init])) {
         self.image = image;
         self.underlyingImage = image;
@@ -48,14 +52,24 @@
     return self;
 }
 
-- (id)initWithURL:(NSURL *)url {
+- (instancetype)initWithURL:(NSURL *)url {
     if ((self = [super init])) {
         self.photoURL = url;
     }
     return self;
 }
 
-- (id)initWithVideoURL:(NSURL *)url {
+- (instancetype)initWithPhotoArray:(NSArray<MWPhoto *> *)photoArray {
+    if ((self = [super init])) {
+        self.photoArray = photoArray;
+        MWPhoto *photo = (MWPhoto *)[photoArray firstObject];
+        self.photoURL = [photo photoURL];
+        self.image = [photo image];
+    }
+    return self;
+}
+
+- (instancetype)initWithVideoURL:(NSURL *)url {
     if ((self = [super init])) {
         self.videoURL = url;
         self.isVideo = YES;
@@ -65,32 +79,34 @@
 
 #pragma mark - Video
 
-- (void)setVideoURL:(NSURL *)videoURL {
-    _videoURL = videoURL;
-    self.isVideo = YES;
+- (BOOL)isVideo {
+    if (_videoURL) {
+        self.isVideo = YES;
+    }
+    return _isVideo;
+}
+
+- (BOOL)isMorePhoto {
+    if (_photoArray) {
+        self.isMorePhoto = YES;
+    }
+    return _isMorePhoto;
 }
 
 - (BOOL)emptyImage {
     if (_photoURL || _image) {
-        _emptyImage = YES;
+        self.emptyImage = NO;
     }else {
-        _emptyImage = NO;
+        self.emptyImage = YES;
     }
     return _emptyImage;
-}
-
-- (void)setPhotoURL:(NSURL *)photoURL {
-    _photoURL = photoURL;
-    self.emptyImage = NO;
 }
 
 - (UIImage *)underlyingImage {
     if (_image) {
         return _image;
-    }else if (_underlyingImage) {
-        return _underlyingImage;
     }
-    return nil;
+    return _underlyingImage;
 }
 
 @end

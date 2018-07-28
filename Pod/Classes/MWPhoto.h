@@ -13,26 +13,27 @@
 // If you want to handle photos, caching, decompression
 // yourself then you can simply ensure your custom data model
 // conforms to MWPhotoProtocol
+
 @interface MWPhoto : NSObject
 
 @property (nonatomic, strong) NSString *caption; // 标题
 
-@property (nonatomic, strong) UIImage *image; // 文件地址
+@property (nonatomic, strong) UIImage *image; // 文件方式
++ (instancetype)photoWithImage:(UIImage *)image;
+
 @property (nonatomic, strong) NSURL *videoURL;
++ (instancetype)videoWithURL:(NSURL *)url; // Initialise video with no poster image
 
 @property (nonatomic, strong) NSURL *photoURL;
-@property (nonatomic, strong) UIImage *underlyingImage;
++ (instancetype)photoWithURL:(NSURL *)url;
 
+@property (nonatomic, strong) NSArray<MWPhoto *> *photoArray;
++ (instancetype)photoWithPhotoArray:(NSArray<MWPhoto *> *)photoArray; // only photo, not video;
+
+@property (nonatomic, strong) UIImage *underlyingImage;
 @property (nonatomic) BOOL emptyImage;
 @property (nonatomic) BOOL isVideo;
-
-+ (MWPhoto *)photoWithImage:(UIImage *)image;
-+ (MWPhoto *)photoWithURL:(NSURL *)url;
-+ (MWPhoto *)videoWithURL:(NSURL *)url; // Initialise video with no poster image
-
-- (id)initWithImage:(UIImage *)image;
-- (id)initWithURL:(NSURL *)url;
-- (id)initWithVideoURL:(NSURL *)url;
+@property (nonatomic) BOOL isMorePhoto;
 
 @end
 
