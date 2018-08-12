@@ -19,6 +19,10 @@
 @interface MWPhoto() {
     UIImage *_underlyingImage;
 }
+@property (nonatomic, assign) BOOL emptyImage;
+@property (nonatomic, assign) BOOL isVideo;
+@property (nonatomic, assign) BOOL isLocal;
+@property (nonatomic, assign) BOOL isMorePhoto;
 
 @end
 
@@ -81,25 +85,34 @@
 
 - (BOOL)isVideo {
     if (_videoURL) {
-        self.isVideo = YES;
+        _isVideo = YES;
     }
     return _isVideo;
 }
 
 - (BOOL)isMorePhoto {
     if (_photoArray) {
-        self.isMorePhoto = YES;
+        _isMorePhoto = YES;
     }
     return _isMorePhoto;
 }
 
 - (BOOL)emptyImage {
     if (_photoURL || _image) {
-        self.emptyImage = NO;
+        _emptyImage = NO;
     }else {
-        self.emptyImage = YES;
+        _emptyImage = YES;
     }
     return _emptyImage;
+}
+
+- (BOOL)isLocal {
+    if ([_photoURL isFileURL] ||
+        [_videoURL isFileURL] ||
+        _image) {
+        _isLocal = YES;
+    }
+    return _isLocal;
 }
 
 - (UIImage *)underlyingImage {

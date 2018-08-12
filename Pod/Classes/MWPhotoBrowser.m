@@ -1049,8 +1049,8 @@
     }else if (type == MCActionTypeShare) {
         [self actionButtonPressed:nil];
     }
-    if ([self.delegate respondsToSelector:@selector(photoBrowser:didTapAction:)]) {
-        [self.delegate photoBrowser:self didTapAction:type];
+    if ([self.delegate respondsToSelector:@selector(photoBrowser:didTapAction:atIndex:)]) {
+        [self.delegate photoBrowser:self didTapAction:type atIndex:self.currentIndex];
     }
 }
 

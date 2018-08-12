@@ -31,9 +31,11 @@
 + (instancetype)photoWithPhotoArray:(NSArray<MWPhoto *> *)photoArray; // only photo, not video;
 
 @property (nonatomic, strong) UIImage *underlyingImage;
-@property (nonatomic) BOOL emptyImage;
-@property (nonatomic) BOOL isVideo;
-@property (nonatomic) BOOL isMorePhoto;
+
+@property (nonatomic, readonly) BOOL emptyImage;
+@property (nonatomic, readonly) BOOL isVideo;
+@property (nonatomic, readonly) BOOL isLocal;
+@property (nonatomic, readonly) BOOL isMorePhoto;
 
 @end
 
