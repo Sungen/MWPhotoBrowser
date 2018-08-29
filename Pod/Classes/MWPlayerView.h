@@ -9,16 +9,10 @@
 #import <AVKit/AVKit.h>
 #import "MWActionView.h"
 
-@protocol MWPlayerViewDelegate <NSObject>
-
-- (void)playerViewDidFinishWithError:(NSError *)error;
-
-@end
 
 @interface MWPlayerView : UIView
 
-@property(nonatomic, strong) MWActionView *actionView;
-@property(nonatomic, weak) id<MWPlayerViewDelegate> delegate;
+- (void)showPlayerControllers:(BOOL)flag withDelegate:(id<MWActionViewPlayerDelegate> )delegate;
 
 - (void)setVideoURL:(NSURL *)url;
 - (void)play;

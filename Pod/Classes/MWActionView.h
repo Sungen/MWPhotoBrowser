@@ -41,15 +41,9 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
 @property(nonatomic, strong) UIButton *shareButton;
 @property(nonatomic, strong) UIButton *moreButton;
 
-@property(nonatomic, strong) UISlider *slider;
-@property(nonatomic, strong) UIButton *playButton;
-@property(nonatomic, strong) UILabel *timeLable;
-@property(nonatomic, strong) UITapGestureRecognizer *tap;
-
 @property(nonatomic, weak) id<MWActionViewDelegate> delegate;
 
-- (void)setupPlayerUIWithTarget:(id)target;
-- (void)showPlayerUI:(BOOL)flag;
+- (void)layoutSubviewsExtension;
 
 @end
 
@@ -57,11 +51,3 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
 @interface MWShapeButton : UIButton
 
 @end
-
-
-@interface MWPlayerSlider : UISlider
-
-@end
-
-
-
