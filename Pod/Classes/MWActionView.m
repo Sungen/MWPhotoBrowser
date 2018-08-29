@@ -5,9 +5,8 @@
 //  Created by Junyang Wu on 2018/7/15.
 //
 
-#import "MWActionView+AVPlayer.h"
+#import "MWActionView.h"
 #import "UIImage+MWPhotoBrowser.h"
-
 
 @implementation MWShapeButton
 + (Class)layerClass {
@@ -17,16 +16,30 @@
 - (void)setFrame:(CGRect)frame {
     [super setFrame:frame];
     
-    //    CAShapeLayer *borderLayer = (CAShapeLayer *)self.layer;
-    //    borderLayer.path = [UIBezierPath bezierPathWithRect:borderLayer.bounds].CGPath;
-    ////    borderLayer.path = [UIBezierPath bezierPathWithRoundedRect:borderLayer.bounds cornerRadius:CGRectGetWidth(borderLayer.bounds)/2].CGPath;
-    //    borderLayer.lineWidth = 1. / [[UIScreen mainScreen] scale];
-    //    //虚线边框
-    //    borderLayer.lineDashPattern = @[@4, @4];
-    //    //实线边框
-    ////    borderLayer.lineDashPattern = nil;
-    //    borderLayer.fillColor = [UIColor clearColor].CGColor;
-    //    borderLayer.strokeColor = [UIColor whiteColor].CGColor;
+//    CAShapeLayer *borderLayer = (CAShapeLayer *)self.layer;
+//    borderLayer.path = [UIBezierPath bezierPathWithRect:borderLayer.bounds].CGPath;
+////    borderLayer.path = [UIBezierPath bezierPathWithRoundedRect:borderLayer.bounds cornerRadius:CGRectGetWidth(borderLayer.bounds)/2].CGPath;
+//    borderLayer.lineWidth = 1. / [[UIScreen mainScreen] scale];
+//    //虚线边框
+//    borderLayer.lineDashPattern = @[@4, @4];
+//    //实线边框
+////    borderLayer.lineDashPattern = nil;
+//    borderLayer.fillColor = [UIColor clearColor].CGColor;
+//    borderLayer.strokeColor = [UIColor whiteColor].CGColor;
+}
+
+@end
+
+
+@implementation MWPlayerSlider
+
+- (CGRect)trackRectForBounds:(CGRect)bounds {
+    CGRect trackRect = [super trackRectForBounds:bounds];
+    if (trackRect.size.height > 2) {
+        trackRect.origin.y -= trackRect.size.height - 2;
+        trackRect.size.height = 2;
+    }
+    return trackRect;
 }
 
 @end
@@ -65,7 +78,52 @@
     self.clipButton.frame = CGRectMake(CGRectGetMinX(self.shareButton.frame)-16-30, CGRectGetMinY(self.moreButton.frame), 30, 30);
     self.menuView.frame = CGRectMake(CGRectGetWidth(self.bounds)-190, CGRectGetHeight(self.bounds)-70-90, 190, 91);
     
+    self.slider.frame = CGRectMake(3, CGRectGetHeight(self.bottomView.bounds)-54, CGRectGetWidth(self.bottomView.bounds)-6, 18);
+    self.playButton.frame = CGRectMake(8, CGRectGetMaxY(self.slider.frame), 30, 30);
+    self.timeLable.frame = CGRectMake(CGRectGetMaxX(self.playButton.frame)+4, CGRectGetMidY(self.playButton.frame)-10, 120, 20);
+}
+
+- (void)setupPlayerUIWithTarget:(id)target {
+    MWPlayerSlider *slider = [[MWPlayerSlider alloc] initWithFrame:CGRectZero];
+    UIImage *image = [UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageSlider" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]];
+    [slider setThumbImage:image forState:UIControlStateNormal];
+    slider.minimumTrackTintColor = [UIColor colorWithRed:1.0*0xc8/0xff green:1.0*0x17/0xff blue:1.0*0x1e/0xff alpha:1.0];
+    slider.maximumTrackTintColor = [UIColor colorWithRed:1.0*0x8c/0xff green:1.0*0x8c/0xff blue:1.0*0x8c/0xff alpha:1.0];
+    [slider addTarget:target action:@selector(sliderDidTouchDown:) forControlEvents:UIControlEventTouchDown];
+    [slider addTarget:target action:@selector(sliderValueDidChanged:) forControlEvents:UIControlEventValueChanged];
+    [slider addTarget:target action:@selector(sliderDidTouchUp:) forControlEvents:UIControlEventTouchUpInside];
+    [slider addTarget:target action:@selector(sliderDidTouchUp:) forControlEvents:UIControlEventTouchUpOutside];
+    [self.bottomView addSubview:slider];
+    self.slider = slider;
+    slider.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleWidth;
     
+    UIButton *button = [MWShapeButton buttonWithType:UIButtonTypeCustom];
+    [button addTarget:target action:@selector(playAction:) forControlEvents:UIControlEventTouchUpInside];
+    [self.bottomView addSubview:button];
+    self.playButton = button;
+    button.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleBottomMargin;
+    
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
+    label.backgroundColor = [UIColor clearColor];
+    label.textColor = [UIColor colorWithRed:1.0*0x55/0xff green:1.0*0x55/0xff blue:1.0*0x55/0xff alpha:1.0];
+    label.font = [UIFont fontWithName:@"PingFangSC-Regular" size:11];
+    label.textAlignment = NSTextAlignmentLeft;
+    [self.bottomView addSubview:label];
+    self.timeLable = label;
+    label.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleBottomMargin;
+    
+    
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:target action:@selector(tap:)];
+    [tap setNumberOfTouchesRequired:1];
+    [self.slider addGestureRecognizer:tap];
+    self.tap = tap;
+    
+    [self showPlayerUI:NO];
+}
+
+- (void)showPlayerUI:(BOOL)flag {
+    self.slider.hidden = self.playButton.hidden = self.timeLable.hidden = !flag;
+    self.tap.enabled = flag;
 }
 
 - (void)setupView {

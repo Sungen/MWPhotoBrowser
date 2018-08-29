@@ -5,12 +5,11 @@
 //  Created by Junyang Wu on 2018/7/16.
 //
 
-#import "MWActionView+AVPlayer.h"
+#import "MWPlayerView.h"
 #import "UIImage+MWPhotoBrowser.h"
 #import "MWPhotoBrowser.h"
 
-
-@interface MWPlayerView ()
+@interface MWPlayerView()
 
 @property(nonatomic, strong) UIActivityIndicatorView *loadingIndicatorView;
 
@@ -20,20 +19,24 @@
 @property(nonatomic, assign) CGFloat fps;
 @property(nonatomic, assign) BOOL isObservering;
 
-@property(nonatomic, strong) UISlider *slider;
-@property(nonatomic, strong) UIButton *playButton;
-@property(nonatomic, strong) UILabel *timeLable;
-@property(nonatomic, strong) UITapGestureRecognizer *tap;
-
-@property(nonatomic, weak) id<MWActionViewPlayerDelegate> playerDelegate;
-@property(nonatomic, strong) id periodObserver;
-
 @end
 
-@implementation MWPlayerView
+@implementation MWPlayerView {
+    id _periodObserver;
+}
 
 + (Class)layerClass {
     return [AVPlayerLayer class];
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.backgroundColor = [UIColor blackColor];
+        self.userInteractionEnabled = NO;
+        [self setupView];
+    }
+    return self;
 }
 
 - (CGFloat)duration {
@@ -62,79 +65,27 @@
     return [[self playerLayer] player];
 }
 
-- (void)layoutSubviewsExtension {
+- (void)layoutSubviews {
+    [super layoutSubviews];
     
-    self.slider.frame = CGRectMake(3, CGRectGetHeight(self.bottomView.bounds)-54, CGRectGetWidth(self.bottomView.bounds)-6, 18);
-    self.playButton.frame = CGRectMake(8, CGRectGetMaxY(self.slider.frame), 30, 30);
-    self.timeLable.frame = CGRectMake(CGRectGetMaxX(self.playButton.frame)+4, CGRectGetMidY(self.playButton.frame)-10, 120, 20);
     self.loadingIndicatorView.center = self.center;
 }
 
-- (UISlider *)slider {
-    if (!_slider) {
-        MWPlayerSlider *slider = [[MWPlayerSlider alloc] initWithFrame:CGRectZero];
-        UIImage *image = [UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageSlider" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]];
-        [slider setThumbImage:image forState:UIControlStateNormal];
-        slider.minimumTrackTintColor = [UIColor colorWithRed:1.0*0xc8/0xff green:1.0*0x17/0xff blue:1.0*0x1e/0xff alpha:1.0];
-        slider.maximumTrackTintColor = [UIColor colorWithRed:1.0*0x8c/0xff green:1.0*0x8c/0xff blue:1.0*0x8c/0xff alpha:1.0];
-        [slider addTarget:self action:@selector(sliderDidTouchDown:) forControlEvents:UIControlEventTouchDown];
-        [slider addTarget:self action:@selector(sliderValueDidChanged:) forControlEvents:UIControlEventValueChanged];
-        [slider addTarget:self action:@selector(sliderDidTouchUp:) forControlEvents:UIControlEventTouchUpInside];
-        [slider addTarget:self action:@selector(sliderDidTouchUp:) forControlEvents:UIControlEventTouchUpOutside];
-        [self.bottomView addSubview:slider];
-        self.slider = slider;
-        slider.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleWidth;
-    }
-    return _slider;
-}
-
-- (UIButton *)playButton {
-    if (!_playButton) {
-        UIButton *button = [MWShapeButton buttonWithType:UIButtonTypeCustom];
-        [button addTarget:self action:@selector(playAction:) forControlEvents:UIControlEventTouchUpInside];
-        [self.bottomView addSubview:button];
-        self.playButton = button;
-        button.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleBottomMargin;
-    }
-    return _playButton;
-}
-
-- (UILabel *)timeLable {
-    if (!_timeLable) {
-        UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
-        label.backgroundColor = [UIColor clearColor];
-        label.textColor = [UIColor colorWithRed:1.0*0x55/0xff green:1.0*0x55/0xff blue:1.0*0x55/0xff alpha:1.0];
-        label.font = [UIFont fontWithName:@"PingFangSC-Regular" size:11];
-        label.textAlignment = NSTextAlignmentLeft;
-        [self.bottomView addSubview:label];
-        self.timeLable = label;
-        label.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleBottomMargin;
-    }
-    return _timeLable;
-}
-
-- (UIActivityIndicatorView *)loadingIndicatorView {
-    if (!_loadingIndicatorView) {
-        UIActivityIndicatorView *aiv = [[UIActivityIndicatorView alloc] initWithFrame:CGRectMake(0, 0, 20, 20)];
-        aiv.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhite;
-        aiv.hidesWhenStopped = YES;
-        [self addSubview:aiv];
-        self.loadingIndicatorView = aiv;
-    }
-    return _loadingIndicatorView;
-}
-
-- (UITapGestureRecognizer *)tap {
-    if (!_tap) {
-        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tap:)];
-        [tap setNumberOfTouchesRequired:1];
-        [self.slider addGestureRecognizer:tap];
-        self.tap = tap;
-    }
-    return _tap;
+- (void)setActionView:(MWActionView *)actionView {
+    _actionView = actionView;
+    [actionView setupPlayerUIWithTarget:self];
 }
 
 #pragma mark -
+
+- (void)setupView {
+    UIActivityIndicatorView *aiv = [[UIActivityIndicatorView alloc] initWithFrame:CGRectMake(0, 0, 20, 20)];
+    aiv.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhite;
+    aiv.hidesWhenStopped = YES;
+    [self addSubview:aiv];
+    self.loadingIndicatorView = aiv;
+}
+
 - (void)addPlayNotifications {
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(videoFinishedCallback:)
@@ -151,8 +102,8 @@
         if (!weakSelf.isDraging) {
             CGFloat currentTime = CMTimeGetSeconds(time);
             NSString *timeText = [NSString stringWithFormat:@"%@/%@", [weakSelf convertTime:currentTime], [weakSelf convertTime:weakSelf.duration]];
-            weakSelf.timeLable.text = timeText;
-            [weakSelf.slider setValue:(currentTime/weakSelf.duration) animated:YES];
+            weakSelf.actionView.timeLable.text = timeText;
+            [weakSelf.actionView.slider setValue:(currentTime/weakSelf.duration) animated:YES];
         }
     }];
 }
@@ -194,24 +145,18 @@
 }
 
 - (void)clean {
-    self.timeLable.text = @"00:00/--:--";
-    self.slider.value = 0;
-    self.playButton.tag = 2;
+    self.actionView.timeLable.text = @"00:00/--:--";
+    self.actionView.slider.value = 0;
+    self.actionView.playButton.tag = 2;
     [self makeControllerEnable:NO];
     [self pause];
 }
 
 - (void)makeControllerEnable:(BOOL)enable {
-    self.playButton.enabled = self.slider.enabled = enable;
+    self.actionView.playButton.enabled = self.actionView.slider.enabled = enable;
 }
 
 #pragma mark -
-
-- (void)showPlayerControllers:(BOOL)flag withDelegate:(id<MWActionViewPlayerDelegate>)delegate {
-    self.slider.hidden = self.playButton.hidden = self.timeLable.hidden = !flag;
-    self.tap.enabled = flag;
-    self.delegate = delegate;
-}
 
 - (void)setVideoURL:(NSURL *)url {
     [self clean];
@@ -249,7 +194,7 @@
         subView.alpha = alpha;
     }
     if (alpha == 0) {
-        self.menuView.hidden = YES;
+        self.actionView.menuView.hidden = YES;
     }
 }
 
@@ -258,16 +203,16 @@
 }
 
 - (void)doPause {
-    self.playButton.tag = 1;
-    [self.playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImagePlay" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
-    [self.playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImagePlayTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
+    self.actionView.playButton.tag = 1;
+    [self.actionView.playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImagePlay" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
+    [self.actionView.playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImagePlayTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
     [[self player] pause];
 }
 
 - (void)doPlay {
-    self.playButton.tag = 2;
-    [self.playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImagePause" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
-    [self.playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImagePauseTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
+    self.actionView.playButton.tag = 2;
+    [self.actionView.playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImagePause" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
+    [self.actionView.playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImagePauseTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
     [[self player] play];
 }
 
@@ -286,7 +231,7 @@
     Float64 duration = self.duration;
     Float64 current = slider.value * duration;
     NSString *timeText = [NSString stringWithFormat:@"%@/%@", [self convertTime:current], [self convertTime:duration]];
-    self.timeLable.text = timeText;
+    self.actionView.timeLable.text = timeText;
     
     CMTime time = CMTimeMakeWithSeconds(current, self.fps);
     [[self player] seekToTime:time toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
@@ -295,7 +240,7 @@
 - (void)sliderDidTouchUp:(UISlider *)slider {
     MWLog(@"==>>sliderDidTouchUp");
     self.isDraging = NO;
-    self.tap.enabled = YES;
+    self.actionView.tap.enabled = YES;
     if (self.isPlaying) {
         [self doPlay];
     }
@@ -304,7 +249,7 @@
 - (void)sliderDidTouchDown:(UISlider *)slider {
     MWLog(@"==>>sliderDidTouchDown");
     self.isDraging = YES;
-    self.tap.enabled = NO;
+    self.actionView.tap.enabled = NO;
     if (self.isPlaying) {
         [self doPause];
     }
@@ -312,9 +257,9 @@
 
 - (void)tap:(UITapGestureRecognizer *)tap {
     MWLog(@"==>>tap");
-    CGPoint point = [tap locationInView:self.slider];
-    CGFloat value = point.x / CGRectGetWidth(self.slider.frame);
-    [self.slider setValue:value animated:YES];
+    CGPoint point = [tap locationInView:self.actionView.slider];
+    CGFloat value = point.x / CGRectGetWidth(self.actionView.slider.frame);
+    [self.actionView.slider setValue:value animated:YES];
     
     if (self.isPlaying) {
         [self doPause];
@@ -346,15 +291,15 @@
 
 - (void)videoFailedCallback:(NSNotification*)notification {
     [self pause];
-    if ([self.playerDelegate respondsToSelector:@selector(playerViewDidFinishWithError:)]) {
-        [self.playerDelegate playerViewDidFinishWithError:nil];
+    if ([self.delegate respondsToSelector:@selector(playerViewDidFinishWithError:)]) {
+        [self.delegate playerViewDidFinishWithError:nil];
     }
 }
 
 - (void)videoFinishedCallback:(NSNotification*)notification {
     [self pause];
-    if ([self.playerDelegate respondsToSelector:@selector(playerViewDidFinishWithError:)]) {
-        [self.playerDelegate playerViewDidFinishWithError:nil];
+    if ([self.delegate respondsToSelector:@selector(playerViewDidFinishWithError:)]) {
+        [self.delegate playerViewDidFinishWithError:nil];
     }
 }
 
