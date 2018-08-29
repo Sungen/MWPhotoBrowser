@@ -19,6 +19,10 @@
 @interface MWPhoto() {
     UIImage *_underlyingImage;
 }
+@property (nonatomic, assign) BOOL emptyImage;
+@property (nonatomic, assign) BOOL isVideo;
+@property (nonatomic, assign) BOOL isLocal;
+@property (nonatomic, assign) BOOL isMorePhoto;
 
 @end
 
@@ -26,21 +30,25 @@
 
 #pragma mark - Class Methods
 
-+ (MWPhoto *)photoWithImage:(UIImage *)image {
-	return [[MWPhoto alloc] initWithImage:image];
++ (instancetype)photoWithImage:(UIImage *)image {
+    return [[MWPhoto alloc] initWithImage:image];
 }
 
-+ (MWPhoto *)photoWithURL:(NSURL *)url {
++ (instancetype)photoWithURL:(NSURL *)url {
     return [[MWPhoto alloc] initWithURL:url];
 }
 
-+ (MWPhoto *)videoWithURL:(NSURL *)url {
++ (instancetype)photoWithPhotoArray:(NSArray<MWPhoto *> *)photoArray {
+    return [[MWPhoto alloc] initWithPhotoArray:photoArray];
+}
+
++ (instancetype)videoWithURL:(NSURL *)url {
     return [[MWPhoto alloc] initWithVideoURL:url];
 }
 
 #pragma mark - Init
 
-- (id)initWithImage:(UIImage *)image {
+- (instancetype)initWithImage:(UIImage *)image {
     if ((self = [super init])) {
         self.image = image;
         self.underlyingImage = image;
@@ -48,14 +56,24 @@
     return self;
 }
 
-- (id)initWithURL:(NSURL *)url {
+- (instancetype)initWithURL:(NSURL *)url {
     if ((self = [super init])) {
         self.photoURL = url;
     }
     return self;
 }
 
-- (id)initWithVideoURL:(NSURL *)url {
+- (instancetype)initWithPhotoArray:(NSArray<MWPhoto *> *)photoArray {
+    if ((self = [super init])) {
+        self.photoArray = photoArray;
+        MWPhoto *photo = (MWPhoto *)[photoArray firstObject];
+        self.photoURL = [photo photoURL];
+        self.image = [photo image];
+    }
+    return self;
+}
+
+- (instancetype)initWithVideoURL:(NSURL *)url {
     if ((self = [super init])) {
         self.videoURL = url;
         self.isVideo = YES;
@@ -65,32 +83,43 @@
 
 #pragma mark - Video
 
-- (void)setVideoURL:(NSURL *)videoURL {
-    _videoURL = videoURL;
-    self.isVideo = YES;
+- (BOOL)isVideo {
+    if (_videoURL) {
+        _isVideo = YES;
+    }
+    return _isVideo;
+}
+
+- (BOOL)isMorePhoto {
+    if (_photoArray) {
+        _isMorePhoto = YES;
+    }
+    return _isMorePhoto;
 }
 
 - (BOOL)emptyImage {
     if (_photoURL || _image) {
-        _emptyImage = YES;
-    }else {
         _emptyImage = NO;
+    }else {
+        _emptyImage = YES;
     }
     return _emptyImage;
 }
 
-- (void)setPhotoURL:(NSURL *)photoURL {
-    _photoURL = photoURL;
-    self.emptyImage = NO;
+- (BOOL)isLocal {
+    if ([_photoURL isFileURL] ||
+        [_videoURL isFileURL] ||
+        _image) {
+        _isLocal = YES;
+    }
+    return _isLocal;
 }
 
 - (UIImage *)underlyingImage {
     if (_image) {
         return _image;
-    }else if (_underlyingImage) {
-        return _underlyingImage;
     }
-    return nil;
+    return _underlyingImage;
 }
 
 @end

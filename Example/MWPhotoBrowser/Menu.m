@@ -85,10 +85,10 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    NSInteger rows = 9;
-    @synchronized(_assets) {
-        if (_assets.count) rows++;
-    }
+    NSInteger rows = 10;
+//    @synchronized(_assets) {
+//        if (_assets.count) rows++;
+//    }
     return rows;
 }
 
@@ -1077,34 +1077,22 @@
             break;
         }
 		case 9: {
-//            @synchronized(_assets) {
-//                NSMutableArray *copy = [_assets copy];
-//                if (NSClassFromString(@"PHAsset")) {
-//                    // Photos library
-//                    UIScreen *screen = [UIScreen mainScreen];
-//                    CGFloat scale = screen.scale;
-//                    // Sizing is very rough... more thought required in a real implementation
-//                    CGFloat imageSize = MAX(screen.bounds.size.width, screen.bounds.size.height) * 1.5;
-//                    CGSize imageTargetSize = CGSizeMake(imageSize * scale, imageSize * scale);
-//                    CGSize thumbTargetSize = CGSizeMake(imageSize / 3.0 * scale, imageSize / 3.0 * scale);
-//                    for (PHAsset *asset in copy) {
-//                        [photos addObject:[MWPhoto photoWithAsset:asset targetSize:imageTargetSize]];
-//                        [thumbs addObject:[MWPhoto photoWithAsset:asset targetSize:thumbTargetSize]];
-//                    }
-//                } else {
-//                    // Assets library
-//                    for (ALAsset *asset in copy) {
-//                        MWPhoto *photo = [MWPhoto photoWithURL:asset.defaultRepresentation.url];
-//                        [photos addObject:photo];
-//                        MWPhoto *thumb = [MWPhoto photoWithImage:[UIImage imageWithCGImage:asset.thumbnail]];
-//                        [thumbs addObject:thumb];
-//                        if ([asset valueForProperty:ALAssetPropertyType] == ALAssetTypeVideo) {
-//                            photo.videoURL = asset.defaultRepresentation.url;
-//                            thumb.isVideo = true;
-//                        }
-//                    }
-//                }
-//            }
+            NSMutableArray *photoArray = [NSMutableArray array];
+            // Local Photos and Videos
+            photo = [MWPhoto photoWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"photo5" ofType:@"jpg"]]];
+            photo.caption = @"Fireworks";
+            [photoArray addObject:photo];
+            photo = [MWPhoto photoWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"photo2" ofType:@"jpg"]]];
+            photo.caption = @"The London Eye is a giant Ferris wheel situated on the banks of the River Thames, in London, England.";
+            [photoArray addObject:photo];
+            photo = [MWPhoto photoWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"photo3" ofType:@"jpg"]]];
+            photo.caption = @"York Floods";
+            [photoArray addObject:photo];
+            photo = [MWPhoto photoWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"photo4" ofType:@"jpg"]]];
+            photo.caption = @"Campervan";
+            [photoArray addObject:photo];
+            photo = [MWPhoto photoWithPhotoArray:photoArray];
+            [photos addObject:photo];
 			break;
         }
 		default: break;

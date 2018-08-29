@@ -52,6 +52,7 @@
 {
     UIView *hitView = [super hitTest:point withEvent:event];
     if (hitView == self || hitView == self.bottomView) {
+        [self showMenu:NO];
         return nil;
     }
     return hitView;
@@ -235,13 +236,20 @@
 
 - (void)tapAction:(UIButton *)button {
     if (button.tag == MCActionTypeMore) {
-        self.menuView.hidden = NO;
-    }else if (button.tag == MCActionTypeDownToLocal || button.tag == MCActionTypeDelete){
-        self.menuView.hidden = YES;
+        [self showMenu:YES];
+    }else {
+        [self showMenu:NO];
     }
     if ([self.delegate respondsToSelector:@selector(actionViewDidTapAction:)]) {
         [self.delegate actionViewDidTapAction:button.tag];
     }
+}
+
+- (void)showMenu:(BOOL)flag {
+    self.menuView.hidden = !flag;
+    self.bottomView.userInteractionEnabled = !flag;
+    self.prevButton.userInteractionEnabled = !flag;
+    self.nextButton.userInteractionEnabled = !flag;
 }
 
 @end

@@ -33,7 +33,7 @@
 - (void)photoBrowser:(MWPhotoBrowser *)photoBrowser photoAtIndex:(NSUInteger)index selectedChanged:(BOOL)selected;
 - (void)photoBrowserDidFinishModalPresentation:(MWPhotoBrowser *)photoBrowser;
 
-- (void)photoBrowser:(MWPhotoBrowser *)photoBrowser didTapAction:(MCActionType)actionType;
+- (void)photoBrowser:(MWPhotoBrowser *)photoBrowser didTapAction:(MCActionType)actionType atIndex:(NSUInteger)index;
 
 @end
 
