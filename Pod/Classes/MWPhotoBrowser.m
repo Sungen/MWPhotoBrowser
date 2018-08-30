@@ -147,26 +147,42 @@
     _pagingScrollView.contentSize = [self contentSizeForPagingScrollView];
 	[self.view addSubview:_pagingScrollView];
     
-    // ActionView
-    _actionView = [[MWActionView alloc] initWithFrame:[self.view bounds]];
-    _actionView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
-                                   UIViewAutoresizingFlexibleHeight |
-                                   UIViewAutoresizingFlexibleTopMargin |
-                                   UIViewAutoresizingFlexibleBottomMargin |
-                                   UIViewAutoresizingFlexibleLeftMargin |
-                                   UIViewAutoresizingFlexibleRightMargin);
-    _actionView.delegate = self;
+    if (self.displayActionView) {
+        // ActionView
+        _actionView = [[MWActionView alloc] initWithFrame:[self.view bounds]];
+        _actionView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                        UIViewAutoresizingFlexibleHeight |
+                                        UIViewAutoresizingFlexibleTopMargin |
+                                        UIViewAutoresizingFlexibleBottomMargin |
+                                        UIViewAutoresizingFlexibleLeftMargin |
+                                        UIViewAutoresizingFlexibleRightMargin);
+        _actionView.delegate = self;
+        
+        // PlayerView
+        _playerView = [[MWPlayerView alloc] initWithFrame:[self.view bounds]];
+        _playerView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                        UIViewAutoresizingFlexibleHeight |
+                                        UIViewAutoresizingFlexibleTopMargin |
+                                        UIViewAutoresizingFlexibleBottomMargin |
+                                        UIViewAutoresizingFlexibleLeftMargin |
+                                        UIViewAutoresizingFlexibleRightMargin);
+        _playerView.delegate = self;
+        _playerView.actionView = _actionView;
+    }
     
-    // PlayerView
-    _playerView = [[MWPlayerView alloc] initWithFrame:[self.view bounds]];
-    _playerView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
-                                   UIViewAutoresizingFlexibleHeight |
-                                   UIViewAutoresizingFlexibleTopMargin |
-                                   UIViewAutoresizingFlexibleBottomMargin |
-                                   UIViewAutoresizingFlexibleLeftMargin |
-                                   UIViewAutoresizingFlexibleRightMargin);
-    _playerView.delegate = self;
-    _playerView.actionView = _actionView;
+    // BrowserView
+    if (self.displayHorizonBrowser) {
+        _browserView = [[MWHorizonBrowserView alloc] initWithFrame:[self.view bounds]];
+        _browserView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                         UIViewAutoresizingFlexibleHeight |
+                                         UIViewAutoresizingFlexibleTopMargin |
+                                         UIViewAutoresizingFlexibleBottomMargin |
+                                         UIViewAutoresizingFlexibleLeftMargin |
+                                         UIViewAutoresizingFlexibleRightMargin);
+        _browserView.delegate = self;
+        _browserView.photoArray = self->_fixedPhotosArray;
+    }
+    
     
     // Update
     [self reloadData];
@@ -223,6 +239,13 @@
         }
         if (!_actionView.superview) {
             [self.view addSubview:_actionView];
+        }
+    }
+    
+    // browserview visibility
+    if (self.displayHorizonBrowser) {
+        if (!_browserView.superview) {
+            [self.view addSubview:_browserView];
         }
     }
     
@@ -783,6 +806,10 @@
     }
 }
 
+- (void)horizonBrowserViewDidSelectIndex:(NSInteger)index {
+    [self jumpToPageAtIndex:index animated:YES];
+}
+
 - (void)morePhotoButtonTap:(UIBarButtonItem *)barItem {
     MWPhoto *photo = [self photoAtIndex:self.currentIndex];
     if (![photo isMorePhoto]) {
@@ -793,7 +820,8 @@
     // Create browser
     MWPhotoBrowser *browser = [[MWPhotoBrowser alloc] initWithPhotos:photo.photoArray];
 //    browser.delegate = self;
-    browser.displayActionView = self.displayActionView;
+    browser.displayActionView = NO;
+    browser.displayHorizonBrowser = YES;
     browser.zoomPhotosToFill = self.zoomPhotosToFill;
     browser.autoPlayOnAppear = self.autoPlayOnAppear;
     [browser setCurrentPhotoIndex:0];

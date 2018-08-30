@@ -10,9 +10,10 @@
 #import <MBProgressHUD/MBProgressHUD.h>
 #import "MWZoomingScrollView.h"
 #import "MWPlayerView.h"
+#import "MWHorizonBrowserView.h"
 
 // Declare private methods of browser
-@interface MWPhotoBrowser () <MWPlayerViewDelegate, MWActionViewDelegate> {
+@interface MWPhotoBrowser () <MWPlayerViewDelegate, MWActionViewDelegate, MWHorizonBrowserViewDelegate> {
     
 	// Data
     NSUInteger _photoCount;
@@ -50,6 +51,7 @@
     NSUInteger _currentVideoIndex;
     MWActionView *_actionView;
     MWPlayerView *_playerView;
+    MWHorizonBrowserView *_browserView;
     
     // Misc
     BOOL _hasBelongedToViewController;

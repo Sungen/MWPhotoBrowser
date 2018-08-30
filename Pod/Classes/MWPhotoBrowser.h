@@ -35,6 +35,8 @@
 
 - (void)photoBrowser:(MWPhotoBrowser *)photoBrowser didTapAction:(MCActionType)actionType atIndex:(NSUInteger)index;
 
+- (void)photoBrowser:(MWPhotoBrowser *)photoBrowser didTapAction:(MCActionType)actionType atPhoto:(MWPhoto *)photo atIndex:(NSUInteger)index;
+
 @end
 
 @interface MWPhotoBrowser : UIViewController <UIScrollViewDelegate, UIActionSheetDelegate>
@@ -43,6 +45,7 @@
 @property (nonatomic) BOOL zoomPhotosToFill;
 @property (nonatomic) BOOL autoPlayOnAppear;
 @property (nonatomic) BOOL displayActionView;
+@property (nonatomic) BOOL displayHorizonBrowser;
 @property (nonatomic, readonly) NSUInteger currentIndex;
 
 // Customise image selection icons as they are the only icons with a colour tint
