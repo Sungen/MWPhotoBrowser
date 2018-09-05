@@ -1110,7 +1110,6 @@
     // Test custom selection images
 //    browser.customImageSelectedIconName = @"ImageSelected.png";
 //    browser.customImageSelectedSmallIconName = @"ImageSelectedSmall.png";
-    
     // Reset selections
     if (displaySelectionButtons) {
         _selections = [NSMutableArray new];
@@ -1120,17 +1119,7 @@
     }
     
     // Show
-    if (_segmentedControl.selectedSegmentIndex == 0) {
-        // Push
-        [self.navigationController pushViewController:browser animated:YES];
-    } else {
-        // Modal
-        UINavigationController *nc = [[UINavigationController alloc] initWithRootViewController:browser];
-        nc.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
-        [self presentViewController:nc animated:YES completion:nil];
-    }
-    
-    // Release
+    [browser showInViewController:self];
 	
 	// Deselect
 	[self.tableView deselectRowAtIndexPath:indexPath animated:YES];

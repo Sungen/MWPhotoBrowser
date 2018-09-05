@@ -181,6 +181,7 @@
                                          UIViewAutoresizingFlexibleRightMargin);
         _browserView.delegate = self;
         _browserView.photoArray = self->_fixedPhotosArray;
+        [_browserView.backButton addTarget:self action:@selector(doneButtonPressed:) forControlEvents:UIControlEventTouchUpInside];
     }
     
     
@@ -200,34 +201,6 @@
 	// Setup pages
     [_visiblePages removeAllObjects];
     [_recycledPages removeAllObjects];
-    
-    // Navigation buttons
-    if ([self.navigationController.viewControllers firstObject] == self) {
-        // We're first on stack so show done button
-        _doneButton = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Done", nil) style:UIBarButtonItemStylePlain target:self action:@selector(doneButtonPressed:)];
-        // Set appearance
-        [_doneButton setBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
-        [_doneButton setBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsCompact];
-        [_doneButton setBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsDefault];
-        [_doneButton setBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsCompact];
-        [_doneButton setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateNormal];
-        [_doneButton setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateHighlighted];
-        self.navigationItem.leftBarButtonItem = _doneButton;
-    } else {
-        // We're not first so show back button
-        UIViewController *previousViewController = [self.navigationController.viewControllers objectAtIndex:self.navigationController.viewControllers.count-2];
-        NSString *backButtonTitle = previousViewController.navigationItem.backBarButtonItem ? previousViewController.navigationItem.backBarButtonItem.title : previousViewController.title;
-        UIBarButtonItem *newBackButton = [[UIBarButtonItem alloc] initWithTitle:backButtonTitle style:UIBarButtonItemStylePlain target:nil action:nil];
-        // Appearance
-        [newBackButton setBackButtonBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
-        [newBackButton setBackButtonBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsCompact];
-        [newBackButton setBackButtonBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsDefault];
-        [newBackButton setBackButtonBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsCompact];
-        [newBackButton setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateNormal];
-        [newBackButton setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateHighlighted];
-        _previousViewControllerBackButton = previousViewController.navigationItem.backBarButtonItem; // remember previous
-        previousViewController.navigationItem.backBarButtonItem = newBackButton;
-    }
     
     // ActionView visibility
     if (self.displayActionView) {
@@ -265,17 +238,17 @@
         if ([presenting isKindOfClass:[UINavigationController class]]) {
             presenting = [(UINavigationController *)presenting topViewController];
         }
-    } else {
-        // We're in a navigation controller so get previous one!
-        if (self.navigationController && self.navigationController.viewControllers.count > 1) {
-            presenting = [self.navigationController.viewControllers objectAtIndex:self.navigationController.viewControllers.count-2];
-        }
     }
     if (presenting) {
         return [presenting prefersStatusBarHidden];
     } else {
         return NO;
     }
+}
+
+- (void)showInViewController:(UIViewController *)viewController {
+    self.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+    [viewController presentViewController:self animated:YES completion:NULL];
 }
 
 #pragma mark - Appearance
@@ -293,25 +266,15 @@
             _leaveStatusBarAlone = YES;
         }
     }
+    
     // Set style
     if (!_leaveStatusBarAlone && UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
         _previousStatusBarStyle = [[UIApplication sharedApplication] statusBarStyle];
         [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleLightContent animated:animated];
     }
     
-    // Navigation bar appearance
-    if (!_viewIsActive && [self.navigationController.viewControllers firstObject] != self) {
-        [self storePreviousNavBarAppearance];
-    }
-    [self setNavBarAppearance:animated];
-    
     // Update UI
 	[self hideControlsAfterDelay];
-    
-    // Initial appearance
-    if (!_viewHasAppearedInitially) {
-    
-    }
     
     // If rotation occured while we're presenting a modal
     // and the index changed, make sure we show the right one now
@@ -347,22 +310,9 @@
     // Detect if rotation occurs while we're presenting a modal
     _pageIndexBeforeRotation = _currentPageIndex;
     
-    // Check that we're disappearing for good
-    // self.isMovingFromParentViewController just doesn't work, ever. Or self.isBeingDismissed
-    if ((_doneButton && self.navigationController.isBeingDismissed) ||
-        ([self.navigationController.viewControllers firstObject] != self && ![self.navigationController.viewControllers containsObject:self])) {
-
-        // State
-        _viewIsActive = NO;
-        [self clearCurrentVideo]; // Clear current playing video
-        
-        // Bar state / appearance
-        [self restorePreviousNavBarAppearance:animated];
-        
-    }
+    _viewIsActive = NO;
     
     // Controls
-    [self.navigationController.navigationBar.layer removeAllAnimations]; // Stop all animations on nav bar
     [NSObject cancelPreviousPerformRequestsWithTarget:self]; // Cancel any pending toggles from taps
     [self setControlsHidden:NO animated:NO permanent:YES];
     
@@ -384,50 +334,6 @@
 
 - (void)didMoveToParentViewController:(UIViewController *)parent {
     if (!parent) _hasBelongedToViewController = YES;
-}
-
-#pragma mark - Nav Bar Appearance
-
-- (void)setNavBarAppearance:(BOOL)animated {
-    [self.navigationController setNavigationBarHidden:NO animated:animated];
-    UINavigationBar *navBar = self.navigationController.navigationBar;
-    navBar.tintColor = [UIColor whiteColor];
-    navBar.barTintColor = nil;
-    navBar.shadowImage = nil;
-    navBar.translucent = YES;
-    navBar.barStyle = UIBarStyleBlackTranslucent;
-    [navBar setBackgroundImage:nil forBarMetrics:UIBarMetricsDefault];
-    [navBar setBackgroundImage:nil forBarMetrics:UIBarMetricsCompact];
-}
-
-- (void)storePreviousNavBarAppearance {
-    _didSavePreviousStateOfNavBar = YES;
-    _previousNavBarBarTintColor = self.navigationController.navigationBar.barTintColor;
-    _previousNavBarTranslucent = self.navigationController.navigationBar.translucent;
-    _previousNavBarTintColor = self.navigationController.navigationBar.tintColor;
-    _previousNavBarHidden = self.navigationController.navigationBarHidden;
-    _previousNavBarStyle = self.navigationController.navigationBar.barStyle;
-    _previousNavigationBarBackgroundImageDefault = [self.navigationController.navigationBar backgroundImageForBarMetrics:UIBarMetricsDefault];
-    _previousNavigationBarBackgroundImageLandscapePhone = [self.navigationController.navigationBar backgroundImageForBarMetrics:UIBarMetricsCompact];
-}
-
-- (void)restorePreviousNavBarAppearance:(BOOL)animated {
-    if (_didSavePreviousStateOfNavBar) {
-        [self.navigationController setNavigationBarHidden:_previousNavBarHidden animated:animated];
-        UINavigationBar *navBar = self.navigationController.navigationBar;
-        navBar.tintColor = _previousNavBarTintColor;
-        navBar.translucent = _previousNavBarTranslucent;
-        navBar.barTintColor = _previousNavBarBarTintColor;
-        navBar.barStyle = _previousNavBarStyle;
-        [navBar setBackgroundImage:_previousNavigationBarBackgroundImageDefault forBarMetrics:UIBarMetricsDefault];
-        [navBar setBackgroundImage:_previousNavigationBarBackgroundImageLandscapePhone forBarMetrics:UIBarMetricsCompact];
-        // Restore back button if we need to
-        if (_previousViewControllerBackButton) {
-            UIViewController *previousViewController = [self.navigationController topViewController]; // We've disappeared so previous is now top
-            previousViewController.navigationItem.backBarButtonItem = _previousViewControllerBackButton;
-            _previousViewControllerBackButton = nil;
-        }
-    }
 }
 
 #pragma mark - Layout
@@ -464,6 +370,9 @@
 	for (MWZoomingScrollView *page in _visiblePages) {
         NSUInteger index = page.index;
 		page.frame = [self frameForPageAtIndex:index];
+        if (page.selectedButton) {
+            page.selectedButton.frame = [self frameForSelectedButton:page.selectedButton atIndex:index];
+        }
         if (page.playButton) {
             page.playButton.frame = [self frameForPlayButton:page.playButton atIndex:index];
         }
@@ -506,7 +415,7 @@
     // In iOS 7 the nav bar gets shown after rotation, but might as well do this for everything!
     if ([self areControlsHidden]) {
         // Force hidden
-        self.navigationController.navigationBarHidden = YES;
+        
     }
 	
 }
@@ -529,8 +438,7 @@
     
     // Ensure nav bar isn't re-displayed
     if ([self areControlsHidden]) {
-        self.navigationController.navigationBarHidden = NO;
-        self.navigationController.navigationBar.alpha = 0;
+        
     }
 }
 
@@ -617,6 +525,28 @@
     return photo;
 }
 
+- (BOOL)photoIsSelectedAtIndex:(NSUInteger)index {
+    MWPhoto *photo = [self photoAtIndex:index];
+    BOOL value = photo.isSelected;
+    if (_displaySelectionButtons) {
+        if ([self.delegate respondsToSelector:@selector(photoBrowser:isPhotoSelectedAtIndex:)]) {
+            value = [self.delegate photoBrowser:self isPhotoSelectedAtIndex:index];
+        }
+    }
+    return value;
+}
+
+- (void)setPhotoSelected:(BOOL)selected atIndex:(NSUInteger)index {
+    MWPhoto *photo = [self photoAtIndex:index];
+    BOOL value = photo.isSelected;
+    if (_displaySelectionButtons) {
+        if ([self.delegate respondsToSelector:@selector(photoBrowser:photoAtIndex:selectedChanged:)]) {
+            [self.delegate photoBrowser:self photoAtIndex:index selectedChanged:selected];
+        }
+    }
+    [photo setSelected:!value];
+}
+
 - (UIImage *)imageForPhoto:(MWPhoto *)photo {
 	if (photo) {
 		// Get image or obtain in background
@@ -672,16 +602,10 @@
 			MWLog(@"Added page at index %lu", (unsigned long)index);
             
             // Add play button if needed
-            if (page.displayingVideo) {
-                UIButton *playButton = [UIButton buttonWithType:UIButtonTypeCustom];
-                [playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/PlayButtonOverlayLarge" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
-                [playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/PlayButtonOverlayLargeTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
-                [playButton addTarget:self action:@selector(playButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-                [playButton sizeToFit];
-                playButton.frame = [self frameForPlayButton:playButton atIndex:index];
-                [_pagingScrollView addSubview:playButton];
-                page.playButton = playButton;
-            }
+            [self configureVideoForPage:page];
+            
+            // Add selected button
+            [self configureSelectedForPage:page forIndex:index];
 		}
 	}
 }
@@ -716,6 +640,35 @@
 	page.frame = [self frameForPageAtIndex:index];
     page.index = index;
     page.photo = [self photoAtIndex:index];
+}
+
+- (void)configureVideoForPage:(MWZoomingScrollView *)page {
+    if (page.displayingVideo) {
+        UIButton *playButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/PlayButtonOverlayLarge" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
+        [playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/PlayButtonOverlayLargeTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
+        [playButton addTarget:self action:@selector(playButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+        [playButton sizeToFit];
+        playButton.frame = [self frameForPlayButton:playButton atIndex:index];
+        [_pagingScrollView addSubview:playButton];
+        page.playButton = playButton;
+    }
+}
+
+- (void)configureSelectedForPage:(MWZoomingScrollView *)page forIndex:(NSUInteger)index {
+    if (self.displaySelectionButtons) {
+        UIButton *selectedButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [selectedButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageSelectedOff" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
+        UIImage *selectedOnImage = [UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageSelectedOn" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]];
+        [selectedButton setImage:selectedOnImage forState:UIControlStateSelected];
+        [selectedButton sizeToFit];
+        selectedButton.adjustsImageWhenHighlighted = NO;
+        [selectedButton addTarget:self action:@selector(selectedButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+        selectedButton.frame = [self frameForSelectedButton:selectedButton atIndex:index];
+        [_pagingScrollView addSubview:selectedButton];
+        page.selectedButton = selectedButton;
+        selectedButton.selected = [self photoIsSelectedAtIndex:index];
+    }
 }
 
 - (MWZoomingScrollView *)dequeueRecycledPage {
@@ -789,17 +742,9 @@
     MWPhoto *photo = [self photoAtIndex:index];
     if ([photo isMorePhoto]) {
         // We're first on stack so show done button
-        UIBarButtonItem *morePhotoItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"查看全部", nil) style:UIBarButtonItemStylePlain target:self action:@selector(morePhotoButtonTap:)];
-        // Set appearance
-        [morePhotoItem setBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
-        [morePhotoItem setBackgroundImage:nil forState:UIControlStateNormal barMetrics:UIBarMetricsCompact];
-        [morePhotoItem setBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsDefault];
-        [morePhotoItem setBackgroundImage:nil forState:UIControlStateHighlighted barMetrics:UIBarMetricsCompact];
-        [morePhotoItem setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateNormal];
-        [morePhotoItem setTitleTextAttributes:[NSDictionary dictionary] forState:UIControlStateHighlighted];
-        self.navigationItem.rightBarButtonItem = morePhotoItem;
+        _actionView.allButton.hidden = NO;
     }else {
-        self.navigationItem.rightBarButtonItem = nil;
+        _actionView.allButton.hidden = YES;
     }
     if ([_delegate respondsToSelector:@selector(photoBrowser:didDisplayPhotoAtIndex:)]) {
         [_delegate photoBrowser:self didDisplayPhotoAtIndex:index];
@@ -810,10 +755,9 @@
     [self jumpToPageAtIndex:index animated:YES];
 }
 
-- (void)morePhotoButtonTap:(UIBarButtonItem *)barItem {
+- (void)allPhotoButtonTap:(UIButton *)button {
     MWPhoto *photo = [self photoAtIndex:self.currentIndex];
     if (![photo isMorePhoto]) {
-        self.navigationItem.rightBarButtonItem = nil;
         return;
     }
     
@@ -822,14 +766,12 @@
 //    browser.delegate = self;
     browser.displayActionView = NO;
     browser.displayHorizonBrowser = YES;
+    browser.displaySelectionButtons = YES;
     browser.zoomPhotosToFill = self.zoomPhotosToFill;
     browser.autoPlayOnAppear = self.autoPlayOnAppear;
     [browser setCurrentPhotoIndex:0];
     
-    // Modal
-    UINavigationController *nc = [[UINavigationController alloc] initWithRootViewController:browser];
-    nc.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
-    [self presentViewController:nc animated:YES completion:nil];
+    [browser showInViewController:self];
 }
 
 - (void)loadAdjacentPhotosIfNecessary:(MWPhoto *)photo {
@@ -899,6 +841,17 @@
                       playButton.frame.size.height);
 }
 
+- (CGRect)frameForSelectedButton:(UIButton *)selectedButton atIndex:(NSUInteger)index {
+    CGRect pageFrame = [self frameForPageAtIndex:index];
+    CGFloat padding = 22;
+    CGFloat yOffset = 0;
+    CGRect selectedButtonFrame = CGRectMake(pageFrame.origin.x + pageFrame.size.width - selectedButton.frame.size.width - padding,
+                                            padding + yOffset,
+                                            selectedButton.frame.size.width,
+                                            selectedButton.frame.size.height);
+    return CGRectIntegral(selectedButtonFrame);
+}
+
 #pragma mark - UIScrollView Delegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -948,18 +901,20 @@
 		self.title = nil;
 	}
 	
-	// Buttons
-	_actionView.prevButton.enabled = (_currentPageIndex > 0);
-    _actionView.nextButton.enabled = (_currentPageIndex < numberOfPhotos - 1);
-    
-    // Disable action button if there is no image or it's a video
-    MWPhoto *photo = [self photoAtIndex:_currentPageIndex];
-    if ([photo underlyingImage] == nil || ([photo respondsToSelector:@selector(isVideo)] && photo.isVideo)) {
-        _actionView.shareButton.enabled = NO;
-        _actionView.shareButton.tintColor = [UIColor clearColor]; // Tint to hide button
-    } else {
-        _actionView.shareButton.enabled = YES;
-        _actionView.shareButton.tintColor = nil;
+    if (self.displayActionView) {
+        // Buttons
+        _actionView.prevButton.enabled = (_currentPageIndex > 0);
+        _actionView.nextButton.enabled = (_currentPageIndex < numberOfPhotos - 1);
+        
+        // Disable action button if there is no image or it's a video
+        MWPhoto *photo = [self photoAtIndex:_currentPageIndex];
+        if ([photo underlyingImage] == nil || ([photo respondsToSelector:@selector(isVideo)] && photo.isVideo)) {
+            _actionView.shareButton.enabled = NO;
+            _actionView.shareButton.tintColor = [UIColor clearColor]; // Tint to hide button
+        } else {
+            _actionView.shareButton.enabled = YES;
+            _actionView.shareButton.tintColor = nil;
+        }
     }
 	
 }
@@ -994,6 +949,21 @@
 }
 
 #pragma mark - Interactions
+
+- (void)selectedButtonTapped:(id)sender {
+    UIButton *selectedButton = (UIButton *)sender;
+    selectedButton.selected = !selectedButton.selected;
+    NSUInteger index = NSUIntegerMax;
+    for (MWZoomingScrollView *page in _visiblePages) {
+        if (page.selectedButton == selectedButton) {
+            index = page.index;
+            break;
+        }
+    }
+    if (index != NSUIntegerMax) {
+        [self setPhotoSelected:selectedButton.selected atIndex:index];
+    }
+}
 
 - (void)playButtonTapped:(id)sender {
     // Ignore if we're already playing a video
@@ -1076,6 +1046,10 @@
         [self gotoNextPage];
     }else if (type == MCActionTypeShare) {
         [self actionButtonPressed:nil];
+    }else if (type == MCActionTypeBack) {
+        [self doneButtonPressed:_actionView.backButton];
+    }else if (type == MCActionTypeAll) {
+        [self allPhotoButtonTap:_actionView.allButton];
     }
     if ([self.delegate respondsToSelector:@selector(photoBrowser:didTapAction:atIndex:)]) {
         [self.delegate photoBrowser:self didTapAction:type atIndex:self.currentIndex];
@@ -1104,23 +1078,18 @@
     
     // Status bar
     if (!_leaveStatusBarAlone) {
-
         // Hide status bar
         if (!_isVCBasedStatusBarAppearance) {
-            
             // Non-view controller based
             [[UIApplication sharedApplication] setStatusBarHidden:hidden withAnimation:animated ? UIStatusBarAnimationSlide : UIStatusBarAnimationNone];
             
         } else {
-            
             // View controller based so animate away
             _statusBarShouldBeHidden = hidden;
             [UIView animateWithDuration:animationDuration animations:^(void) {
                 [self setNeedsStatusBarAppearanceUpdate];
             } completion:^(BOOL finished) {}];
-            
         }
-
     }
     
     __weak typeof(self) weakSelf = self;
@@ -1128,13 +1097,23 @@
         
         typeof(self) strongSelf = weakSelf;
         CGFloat alpha = hidden ? 0 : 1;
-
-        // Nav bar slides up on it's own on iOS 7+
-        [strongSelf.navigationController.navigationBar setAlpha:alpha];
         
         // Tool
         [strongSelf->_actionView setAlpha:alpha];
         [strongSelf->_actionView showMenu:NO];
+        
+        // Browser view
+        [strongSelf->_browserView setAlpha:alpha];
+        
+        // Selected buttons
+        for (MWZoomingScrollView *page in strongSelf->_visiblePages) {
+            if (page.selectedButton) {
+                UIButton *v = page.selectedButton;
+                CGRect newFrame = [strongSelf frameForSelectedButton:v atIndex:0];
+                newFrame.origin.x = v.frame.origin.x;
+                v.frame = newFrame;
+            }
+        }
 
     } completion:^(BOOL finished) {}];
     
@@ -1177,7 +1156,7 @@
 	}
 }
 
-- (BOOL)areControlsHidden { return ([_actionView alpha] == 0);}
+- (BOOL)areControlsHidden { return ([_actionView alpha] == 0 && _browserView.alpha == 0);}
 - (void)hideControls { [self setControlsHidden:YES animated:YES permanent:NO]; }
 - (void)showControls { [self setControlsHidden:NO animated:YES permanent:NO]; }
 - (void)toggleControls { [self setControlsHidden:![self areControlsHidden] animated:YES permanent:NO]; }
@@ -1205,15 +1184,13 @@
 #pragma mark - Misc
 
 - (void)doneButtonPressed:(id)sender {
-    // Only if we're modal and there's a done button
-    if (_doneButton) {
-        // Dismiss view controller
+    // Dismiss view controller
+    if (self.presentingViewController) {
         if ([_delegate respondsToSelector:@selector(photoBrowserDidFinishModalPresentation:)]) {
             // Call delegate method and let them dismiss us
             [_delegate photoBrowserDidFinishModalPresentation:self];
-        } else  {
-            [self dismissViewControllerAnimated:YES completion:nil];
         }
+        [self dismissViewControllerAnimated:YES completion:nil];
     }
 }
 
@@ -1246,12 +1223,6 @@
                 [weakSelf hideProgressHUD:YES];
             }];
         
-            // iOS 8 - Set the Anchor Point for the popover, ipad
-            if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8") && UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
-                UIBarButtonItem *barItem = [[UIBarButtonItem alloc] initWithCustomView:_actionView.shareButton];
-                self.activityViewController.popoverPresentationController.barButtonItem = barItem;
-            }
-        
             [self presentViewController:self.activityViewController animated:YES completion:nil];
         
         // Keep controls hidden
@@ -1265,12 +1236,10 @@
 
 - (void)showProgressHUDWithMessage:(NSString *)message {
     _progressHUD = [MBProgressHUD showDarkIndeterminateHudAddedTo:self.view message:message delay:INFINITY];
-    self.navigationController.navigationBar.userInteractionEnabled = NO;
 }
 
 - (void)hideProgressHUD:(BOOL)animated {
     [_progressHUD hideAnimated:animated];
-    self.navigationController.navigationBar.userInteractionEnabled = YES;
 }
 
 @end

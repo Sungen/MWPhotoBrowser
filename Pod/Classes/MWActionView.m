@@ -70,6 +70,9 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     
+    self.backButton.frame = CGRectMake(16, 22, 44, 44);
+    self.allButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-16-44, 22, 44, 44);
+    
     self.prevButton.frame = CGRectMake(16, CGRectGetMidY(self.bounds)-15, 30, 30);
     self.nextButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-16-30, CGRectGetMinY(self.prevButton.frame), 30, 30);
 //    self.menuButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-20-30, CGRectGetHeight(self.bounds)-72-30, 30, 30);
@@ -129,6 +132,28 @@
 
 - (void)setupView {
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+//    [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageBack" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
+//    [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageBackTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
+    [button setTitle:@"返回" forState:UIControlStateNormal];
+    [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [button addTarget:self action:@selector(tapAction:) forControlEvents:UIControlEventTouchUpInside];
+    button.tag = MCActionTypeBack;
+    [self addSubview:button];
+    self.backButton = button;
+    button.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+    
+    button = [UIButton buttonWithType:UIButtonTypeCustom];
+//    [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageAll" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
+//    [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageAllTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
+    [button setTitle:@"全部" forState:UIControlStateNormal];
+    [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [button addTarget:self action:@selector(tapAction:) forControlEvents:UIControlEventTouchUpInside];
+    button.tag = MCActionTypeAll;
+    [self addSubview:button];
+    self.allButton = button;
+    button.autoresizingMask = UIViewAutoresizingFlexibleRightMargin;
+    
+    button = [UIButton buttonWithType:UIButtonTypeCustom];
     [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImagePrev" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
     [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImagePrevTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
     [button addTarget:self action:@selector(tapAction:) forControlEvents:UIControlEventTouchUpInside];

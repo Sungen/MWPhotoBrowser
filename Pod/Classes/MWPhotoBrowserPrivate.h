@@ -33,19 +33,11 @@
 	
 	// Navigation & controls
 	NSTimer *_controlVisibilityTimer;
-	UIBarButtonItem *_doneButton;
     MBProgressHUD *_progressHUD;
     
     // Appearance
-    BOOL _previousNavBarHidden;
-    BOOL _previousNavBarTranslucent;
-    UIBarStyle _previousNavBarStyle;
     UIStatusBarStyle _previousStatusBarStyle;
-    UIColor *_previousNavBarTintColor;
-    UIColor *_previousNavBarBarTintColor;
-    UIBarButtonItem *_previousViewControllerBackButton;
-    UIImage *_previousNavigationBarBackgroundImageDefault;
-    UIImage *_previousNavigationBarBackgroundImageLandscapePhone;
+    BOOL _previousNavBarHidden;
     
     // Video
     NSUInteger _currentVideoIndex;
@@ -74,11 +66,6 @@
 - (void)layoutVisiblePages;
 - (void)performLayout;
 - (BOOL)presentingViewControllerPrefersStatusBarHidden;
-
-// Nav Bar Appearance
-- (void)setNavBarAppearance:(BOOL)animated;
-- (void)storePreviousNavBarAppearance;
-- (void)restorePreviousNavBarAppearance:(BOOL)animated;
 
 // Paging
 - (void)tilePages;

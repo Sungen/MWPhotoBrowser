@@ -14,5 +14,6 @@
 
 @interface MWHorizonBrowserView : UIView
 @property(nonatomic, strong) NSArray<MWPhoto *> *photoArray;
+@property(nonatomic, strong) UIButton *backButton;
 @property(nonatomic, weak) id<MWHorizonBrowserViewDelegate> delegate;
 @end

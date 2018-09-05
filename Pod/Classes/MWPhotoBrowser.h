@@ -46,12 +46,8 @@
 @property (nonatomic) BOOL autoPlayOnAppear;
 @property (nonatomic) BOOL displayActionView;
 @property (nonatomic) BOOL displayHorizonBrowser;
+@property (nonatomic) BOOL displaySelectionButtons;
 @property (nonatomic, readonly) NSUInteger currentIndex;
-
-// Customise image selection icons as they are the only icons with a colour tint
-// Icon should be located in the app's main bundle
-@property (nonatomic, strong) NSString *customImageSelectedIconName;
-@property (nonatomic, strong) NSString *customImageSelectedSmallIconName;
 
 // Init
 - (id)initWithPhotos:(NSArray *)photosArray;
@@ -66,5 +62,8 @@
 // Navigation
 - (void)showNextPhotoAnimated:(BOOL)animated;
 - (void)showPreviousPhotoAnimated:(BOOL)animated;
+
+// show
+- (void)showInViewController:(UIViewController *)viewController;
 
 @end

@@ -8,7 +8,7 @@
 #import "MWHorizonBrowserView.h"
 #import <SDWebImage/UIImageView+WebCache.h>
 
-@interface MWHorizonBrowserView () <UICollectionViewDataSource, UICollectionViewDelegate>
+@interface MWHorizonBrowserView () <UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout>
 @property(nonatomic, strong) UICollectionView *collectionView;
 @end
 
@@ -39,14 +39,15 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     
+    self.backButton.frame = CGRectMake(16, 22, 44, 44);
     self.collectionView.frame = CGRectMake(0, CGRectGetHeight(self.bounds)-80, CGRectGetWidth(self.bounds), 80);
 }
 
 - (UICollectionView *)collectionView {
     if (!_collectionView) {
         UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
-        layout.minimumLineSpacing = 1.f;
-        layout.minimumInteritemSpacing = 1.f;
+        layout.minimumLineSpacing = 10.f;
+        layout.minimumInteritemSpacing = 10.f;
         layout.headerReferenceSize = CGSizeZero;
         layout.sectionInset = UIEdgeInsetsZero;
         layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
@@ -55,9 +56,9 @@
         collectionView.delegate = self;
         collectionView.dataSource = self;
         collectionView.allowsSelection = YES;
+        collectionView.alwaysBounceHorizontal = YES;
         collectionView.showsVerticalScrollIndicator = NO;
         collectionView.showsHorizontalScrollIndicator = NO;
-        collectionView.indicatorStyle = UIScrollViewIndicatorStyleWhite;
         collectionView.backgroundColor = [UIColor blackColor];
         
         [collectionView registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:@"xxx__yyy"];
@@ -67,6 +68,22 @@
         _collectionView = collectionView;
     }
     return _collectionView;
+}
+
+- (UIButton *)backButton {
+    if (!_backButton) {
+        UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+        //    [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageBack" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
+        //    [button setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageBackTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
+        [button setTitle:@"返回" forState:UIControlStateNormal];
+        [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+//        [button addTarget:self action:@selector(tapAction:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:button];
+        button.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+        
+        _backButton = button;
+    }
+    return _backButton;
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
@@ -99,15 +116,15 @@
 }
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    return CGSizeMake(80, 80);
-//    CGSize size = self.collectionView.bounds.size;
-//    if (size.width > size.height) {
-//        CGFloat width = (size.width-7)/8;
-//        return CGSizeMake(width, width);
-//    }else {
-//        CGFloat width = (size.width-3)/4;
-//        return CGSizeMake(width, width);
-//    }
+    return CGSizeMake(44, 44);
+}
+
+- (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
+    CGFloat totalCellWidth = _photoArray.count * 44.;
+    CGFloat totalSpaceWith = (_photoArray.count - 1) * 10.;
+    CGFloat leftInset = (CGRectGetWidth(collectionView.bounds) - (totalCellWidth + totalSpaceWith)) / 2;
+    CGFloat rightInset = leftInset;
+    return UIEdgeInsetsMake(0, leftInset, 0, rightInset);
 }
 
 @end

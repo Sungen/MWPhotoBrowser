@@ -9,7 +9,10 @@
 
 
 typedef NS_ENUM(NSUInteger, MCActionType) {
-    MCActionTypePrev = 1,
+    MCActionTypeBack = 1,
+    MCActionTypeAll,
+    
+    MCActionTypePrev,
     MCActionTypeNext,
     
     MCActionTypeMenu,
@@ -28,6 +31,9 @@ typedef NS_ENUM(NSUInteger, MCActionType) {
 #pragma mark -
 
 @interface MWActionView : UIView
+
+@property(nonatomic, strong) UIButton *backButton;
+@property(nonatomic, strong) UIButton *allButton;
 
 @property(nonatomic, strong) UIButton *prevButton;
 @property(nonatomic, strong) UIButton *nextButton;

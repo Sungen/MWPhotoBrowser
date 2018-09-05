@@ -37,5 +37,7 @@
 @property (nonatomic, readonly) BOOL isLocal;
 @property (nonatomic, readonly) BOOL isMorePhoto;
 
+@property (nonatomic, assign, getter=isSelected) BOOL selected;
+
 @end
 
